@@ -301,4 +301,20 @@ namespace spotify_api
 
 		object_from_json(api_response.body, queue);
 	}
+	
+	track_t * Player_API::search_for_track(const std::string &q)
+	{
+		std::string query = "q=" + q + "&type=track";
+		auto response = http::get(API_PREFIX "/search", query, this->_access_token);
+
+		if (response.code != 200) {
+			return new track_t;
+		}
+
+		json::json temp = json::json::parse(response.body);
+
+		track_t *top_track = new track_t;
+		Track_API::object_from_json(temp["items"][0].dump(), top_track);
+		return top_track;
+	}
 } // namespace spotify_api

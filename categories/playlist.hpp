@@ -32,9 +32,11 @@ namespace spotify_api
 	class Playlist_API
 	{
 		private:
-		std::string _access_token;
+		const std::atomic<std::string> &_access_token;
 		
 		public:
+		Playlist_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+
 		playlist_t *get_playlist();
 		std::vector<playlist_t *> get_my_playlists(int limit = 0);
 

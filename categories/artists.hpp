@@ -29,9 +29,11 @@ namespace spotify_api
 	class Artist_API
 	{
 	private:
-		std::string _access_token;
+		const std::atomic<std::string> &_access_token;
 	public:
 		void static object_from_json(const std::string &json_string, artist_t *output);
+
+		Artist_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
 	};
 
 } // namespace spotify_api

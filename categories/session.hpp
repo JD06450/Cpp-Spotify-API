@@ -26,10 +26,10 @@ namespace spotify_api
 		std::string refresh_token;
 	};	
 
-	class Api_Session
+	class Session_API
 	{
 	private:
-		std::string _access_token;
+		std::atomic<std::string> _access_token;
 		std::string _refresh_token;
 		std::string _base64_client_id_secret;
 		unsigned long int _token_grant_time;
@@ -41,9 +41,10 @@ namespace spotify_api
 		void _new_refresh_thread(int wait_duration = 0);
 
 	public:
-		Api_Session(api_token_response &token_obj);
-		Api_Session(std::string json_string);
+		Session_API(api_token_response &token_obj);
+		Session_API(std::string json_string);
 
+		const std::atomic<std::string> &get_atomic_token() const;
 		void refresh_access_token();
 		void set_base64_id_secret(std::string &new_value);
 

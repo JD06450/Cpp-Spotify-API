@@ -79,14 +79,15 @@ namespace spotify_api
 	class Player_API
 	{
 		private:
-		std::string _access_token;
+		const std::atomic<std::string> &_access_token;
 
 		public:
-		/*
-		* Usage: retrieves the user's current playback state
-		* Endpoint: /me/player
-		* Parameters: none
-		* Documentation: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-information-about-the-users-current-playback
+		Player_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+
+		/**
+		* @returns the user's current playback state
+		* @note Endpoint: /me/player
+		* @note Docs: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-information-about-the-users-current-playback
 		*/
 		playback_state_t *get_playback_state();
 		
@@ -215,13 +216,11 @@ namespace spotify_api
 		*/
 		void set_volume(int volume_percent);
 
-		/*
-		 * Usage: Toggle shuffle on or off for user’s playback.
-		 * Endpoint: /me/player/suffle
-		 * Parameters:
-		 * -- state: the new shuffle state. true to shuffle, and false to not shuffle
-		 * Returns: void
-		 * Documentation: https://developer.spotify.com/documentation/web-api/reference/toggle-shuffle-for-users-playback
+		/**
+		 * @brief Toggle shuffle on or off for user’s playback.
+		 * @param state the new shuffle state. true to shuffle, and false to not shuffle
+		 * @note Endpoint: /me/player/suffle
+		 * @note Documentation: https://developer.spotify.com/documentation/web-api/reference/toggle-shuffle-for-users-playback
 		*/
 		void set_shuffle(bool state);
 
@@ -251,34 +250,32 @@ namespace spotify_api
 		void static object_from_json(const std::string &json_string, context_t *output);
 		void static object_from_json(const std::string &json_string, recent_tracks_t *output);
 		
-		/*
-		 * Usage: Get tracks from the current user's recently played tracks. Note: Currently doesn't support podcast episodes.
-		 * Endpoint: /me/player/recently-played
-		 * Parameters:
-		 * -- limit: (Optional) The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
-		 * -- timestamp: (Optional) A unix timestamp. This will return all items before or after (but not including) this timestamp.
-		 * -- after: (Optional) If true, will return all items after the specified timestamp. If false, will return all items before the timestamp.
-		 * Returns: A list of tracks the user has recently played
-		 * Documentation: https://developer.spotify.com/documentation/web-api/reference/get-recently-played
+		/**
+		 * @brief Get tracks from the current user's recently played tracks. Note: Currently doesn't support podcast episodes.
+		 * @param limit (Optional) The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
+		 * @param timestamp (Optional) A unix timestamp. This will return all items before or after (but not including) this timestamp.
+		 * @param after (Optional) If true, will return all items after the specified timestamp. If false, will return all items before the timestamp.
+		 * @returns A list of tracks the user has recently played
+		 * @note Endpoint: /me/player/recently-player
+		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-recently-played
 		*/
 		recent_tracks_t * get_recently_played_tracks(int limit, unsigned int timestamp, bool after);
 
-		/*
-		 * Usage: Get all items currently in the user's queue
-		 * Endpoint: /me/player/queue
-		 * Parameters: none
-		 * Returns: A list of all items currently in the user's queue
-		 * Documentation: https://developer.spotify.com/documentation/web-api/reference/get-queue
+		/**
+		 * @brief Get all items currently in the user's queue
+		 * @returns A list of all items currently in the user's queue
+		 * @note Endpoint: /me/player/queue
+		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-queue
 		*/
 		queue_t * get_queue();
 
-		/*
-		 * Usage: Use the search endpoint to search for a track
-		 * Endpoint: /search
-		 * Parameters:
-		 *  -- q: The search query
+		/**
+		 * @brief Use the search endpoint to search for a track
+		 * @note Endpoint: /search
+		 * @param q The search query
+		 * @returns The track that best matches the query
 		*/
-		track_t * search_for_track();
+		track_t * search_for_track(const std::string &q);
 	};
 
 } // namespace spotify_api
