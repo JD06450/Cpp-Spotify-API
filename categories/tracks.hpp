@@ -2,6 +2,7 @@
 #ifndef _SPOTIFY_API_TRACKS_
 #define _SPOTIFY_API_TRACKS_
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <optional>
@@ -14,7 +15,7 @@ namespace spotify_api
 {
 	struct track_t
 	{
-		album_t *album;
+		struct album_t *album;
 		std::vector<artist_t *> artists;
 		std::vector<std::string> available_markets;
 		int disc_number;
@@ -38,10 +39,11 @@ namespace spotify_api
 
 	class Track_API
 	{
-		private:
-		std::string _access_token;
 
 		public:
+		std::string _access_token;
+		Track_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+
 		static void object_from_json(const std::string &json_string, track_t *output);
 		track_t *search_for_track(const std::string &search_query);
 	};

@@ -64,11 +64,10 @@ namespace spotify_api
 	
 	class Episode_API
 	{
-		private:
-		const std::atomic<std::string> &_access_token;
-		
 		public:
+		std::string _access_token;
 		Episode_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+
 		void static object_from_json(const std::string &json_string, episode_t *output);
 	};
 	

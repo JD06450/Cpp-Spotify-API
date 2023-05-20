@@ -300,6 +300,7 @@ namespace spotify_api
 		}
 
 		object_from_json(api_response.body, queue);
+		return queue;
 	}
 	
 	track_t * Player_API::search_for_track(const std::string &q)

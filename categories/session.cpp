@@ -1,5 +1,8 @@
 #include "session.hpp"
 
+#include <iostream>
+#include <unistd.h>
+
 namespace json = nlohmann;
 
 namespace spotify_api
@@ -11,42 +14,37 @@ namespace spotify_api
 		this->_refresh_token = token_obj.refresh_token;
 		this->_token_grant_time = time(NULL);
 		this->_token_expiration_time = this->_token_grant_time + token_obj.expires_in;
-		this->_refresh_done = true;
 
-		this->_new_refresh_thread();
+		this->_stop_loop = false;
+
+		this->new_refresh_thread();
 		std::cout << "past setTimeout" << std::endl;
 	}
 
-	const std::atomic<std::string> &Session_API::get_atomic_token() const {
-		return this->_access_token;
-	}
-
-	void Session_API::_new_refresh_thread(int wait_duration = 0)
+	void Session_API::new_refresh_thread()
 	{
 		puts("Creating a new refresh thread...");
-		int timeout_duration = (wait_duration == 0) ? this->_token_expiration_time - this->_token_grant_time : wait_duration;
 		
-		// We want to check whether this function was called before the current access token should've expired.
-		// The code waits for a millisecond to give the other thread time to set the refresh_done flag then it checks the flag.
-		// If the flag is set, then it is safe to create a new thread. Otherwise we destroy the old thread and create a new one in its place.
-		// Essentially resetting the timer;
-		usleep(1000);
-		if (this->_refresh_done == false)
+		if (this->_refresh_thread->joinable())
 		{
-			delete this->_refresh_thread;
+			this->_stop_loop = true;
+			this->_refresh_thread->join();
 		}
 
-		this->_refresh_done = false;
+		this->_stop_loop = false;
 
-		this->_refresh_thread = new std::thread([this, timeout_duration] {
-			sleep(timeout_duration - 60);
+		this->_refresh_thread = new std::thread([this] {
+			bool retry = false;
+			while (!this->_stop_loop) {
+				int timeout_duration = !retry ? (this->_token_expiration_time - this->_token_grant_time - 60) : 60;
+				sleep(timeout_duration);
 
-			this->_refresh_done = true;
-			this->refresh_access_token();
+				retry = !this->refresh_access_token();
+			}
 		});
 	}
 
-	void Session_API::refresh_access_token()
+	bool Session_API::refresh_access_token()
 	{
 		std::string form_data =
 			"grant_type=refresh_token"
@@ -58,7 +56,9 @@ namespace spotify_api
 		json::json response_json = json::json::parse(response_data.body);
 		try
 		{
+			std::lock_guard<std::mutex> g_access_mutex(this->_access_mutex);
 			this->_access_token = response_json["access_token"].get<std::string>();
+			g_access_mutex.~lock_guard();
 			this->_token_grant_time = time(NULL);
 			this->_token_expiration_time = this->_token_grant_time + response_json["expires_in"].get<unsigned int>();
 			if (response_json.contains("refresh_token"))
@@ -68,11 +68,16 @@ namespace spotify_api
 		}
 		catch (const std::exception &e)
 		{
-			fprintf(stderr, "\033[31mC++ Spotify API refresh_access_token(); Error: Failed to parse response data from Spotify.\nApi Response: %s.\nTrying again in 60s\n\033[39m", response_data.body);
-			this->_new_refresh_thread(60);
-			return;
+			fprintf(stderr, "\033[31mC++ Spotify API refresh_access_token(); Error: Failed to parse response data from Spotify.\nApi Response: %s.\n\033[39m", response_data.body);
+			return false;
 		}
-		this->_new_refresh_thread();
+		return true;
+	}
+
+	const std::string Session_API::get_current_token()
+	{
+		std::lock_guard<std::mutex> g_access_mutex(this->_access_mutex);
+		return this->_access_token;
 	}
 
 	void Session_API::set_base64_id_secret(std::string &new_value)
@@ -80,4 +85,8 @@ namespace spotify_api
 		this->_base64_client_id_secret = new_value;
 	}
 
+	Session_API::~Session_API() {
+		this->_stop_loop = true;
+		if (this->_refresh_thread->joinable()) this->_refresh_thread->join();
+	}
 }

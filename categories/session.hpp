@@ -6,12 +6,9 @@
 #include <map>
 #include <vector>
 #include <atomic>
+#include <mutex>
 #include <thread>
-#include <iostream>
-// #include <ctime>
-// #include <chrono>
-// #include <future>
-#include <unistd.h>
+
 #include <nlohmann/json.hpp>
 
 #include "../curl-util.hpp"
@@ -24,28 +21,47 @@ namespace spotify_api
 		std::string token_type;
 		int expires_in;
 		std::string refresh_token;
-	};	
+	};
+
+	// Add ability to allow user to update access token manually.
 
 	class Session_API
 	{
-	private:
-		std::atomic<std::string> _access_token;
+		private:
+		std::mutex _access_mutex;
+		std::string _access_token;
+		std::atomic<bool> _stop_loop;
 		std::string _refresh_token;
 		std::string _base64_client_id_secret;
 		unsigned long int _token_grant_time;
 		unsigned long int _token_expiration_time;
 		
-		std::atomic<bool> _refresh_done;
-		bool _refresh_cycle_started;
+		/**
+		 * @brief This represents the current background thread dedicated to refreshing the access token periodically
+		 */
 		std::thread * _refresh_thread;
-		void _new_refresh_thread(int wait_duration = 0);
 
-	public:
+		public:
 		Session_API(api_token_response &token_obj);
 		Session_API(std::string json_string);
 
-		const std::atomic<std::string> &get_atomic_token() const;
-		void refresh_access_token();
+		~Session_API();
+
+		/**
+		 * @brief Uses the refresh token provided by Spotify to generate a new access token
+		 * @returns true if the token was successfully refreshed, false otherwise.
+		*/
+		bool refresh_access_token();
+
+		/**
+		 * @brief Retrieve the current value of the access token.
+		 */
+		const std::string get_current_token();
+		
+		/**
+		 * @brief Kills the current refresh thread if it exists and spawns a new one.
+		 */
+		void new_refresh_thread();
 		void set_base64_id_secret(std::string &new_value);
 
 	};

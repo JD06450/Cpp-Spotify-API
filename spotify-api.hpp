@@ -11,7 +11,9 @@
 #include <vector>
 #include <regex>
 #include <ctime>
+#include <mutex>
 #include <map>
+#include <condition_variable>
 
 #include <nlohmann/json.hpp>
 #include "curl-util.hpp"
@@ -33,7 +35,7 @@ namespace spotify_api
 
 	class Spotify_API
 	{
-	private:
+		private:
 		Album_API *		_album_api;
 		Artist_API *	_artist_api;
 		Episode_API *	_episode_api;
@@ -42,11 +44,19 @@ namespace spotify_api
 		//TODO: look into possibly merging Session_API into Spotify_API
 
 		Session_API *	_session_api;
+		Track_API *		_track_api;
+
 		std::string		_access_token;
 
-	public:
+		public:
 		/// Start a new Spotify session using an auth code and client keys
 		Spotify_API(std::string &auth_code, const std::string &redirect_uri, std::string &client_keys_base64);
+
+		~Spotify_API();
+		/**
+		 * @brief This function will update the main thread's version of the access token with the value stored in the background thread.
+		*/
+		void resync_access_token();
 	};
 } // namespace spotify_api
 
