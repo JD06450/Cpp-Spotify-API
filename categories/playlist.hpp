@@ -2,7 +2,6 @@
 #ifndef _SPOTIFY_API_PLAYLISTS_
 #define _SPOTIFY_API_PLAYLISTS_
 
-#include <atomic>
 #include <string>
 #include <map>
 #include <vector>
@@ -34,7 +33,7 @@ namespace spotify_api
 	{
 		public:
 		std::string _access_token;
-		Playlist_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+		Playlist_API(const std::string &access_token): _access_token(access_token) {}
 
 		playlist_t *get_playlist();
 		std::vector<playlist_t *> get_my_playlists(int limit = 0);

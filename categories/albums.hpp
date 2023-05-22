@@ -52,7 +52,7 @@ namespace spotify_api
 	{
 		public:
 		std::string _access_token;
-		Album_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+		Album_API(const std::string &access_token): _access_token(access_token) {}
 
 		album_t *get_album(const std::string &album_id);
 		std::vector<album_t> get_albums(const std::vector<std::string> &album_ids);

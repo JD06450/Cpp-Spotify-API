@@ -80,7 +80,7 @@ namespace spotify_api
 	{
 		public:
 		std::string _access_token;
-		Player_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+		Player_API(const std::string &access_token): _access_token(access_token) {}
 
 		/**
 		* @returns the user's current playback state

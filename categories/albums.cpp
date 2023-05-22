@@ -12,7 +12,7 @@ album_t *Album_API::get_album(const std::string &album_id)
     std::string url = API_PREFIX "/albums/";
     url += album_id;
 
-    http::api_response response = http::get(url.c_str(), std::string(""), this->_access_token.load());
+    http::api_response response = http::get(url.c_str(), std::string(""), this->_access_token);
     if (response.code == 200)
     {
         object_from_json(response.body, retval);
@@ -36,7 +36,7 @@ std::vector<album_t> Album_API::get_albums(const std::vector<std::string> &album
             query_string += album_ids.at(i) + ",";
         }
         query_string = std::regex_replace(query_string, std::regex(",+$"), "");
-        http::api_response batch_response = http::get(API_PREFIX "/albums", query_string, this->_access_token.load());
+        http::api_response batch_response = http::get(API_PREFIX "/albums", query_string, this->_access_token);
         if (batch_response.code == 200)
         {
             json::json albums_json = json::json::parse(batch_response.body)["albums"];
@@ -53,7 +53,7 @@ std::vector<album_t> Album_API::get_albums(const std::vector<std::string> &album
 }
 
 
-void object_from_json(const std::string &json_string, album_t *output)
+void Album_API::object_from_json(const std::string &json_string, album_t *output)
 {
     try
     {

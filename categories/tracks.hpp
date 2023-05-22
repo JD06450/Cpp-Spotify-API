@@ -2,7 +2,6 @@
 #ifndef _SPOTIFY_API_TRACKS_
 #define _SPOTIFY_API_TRACKS_
 
-#include <atomic>
 #include <string>
 #include <vector>
 #include <optional>
@@ -42,7 +41,7 @@ namespace spotify_api
 
 		public:
 		std::string _access_token;
-		Track_API(const std::atomic<std::string> &access_token): _access_token(access_token) {}
+		Track_API(const std::string &access_token): _access_token(access_token) {}
 
 		static void object_from_json(const std::string &json_string, track_t *output);
 		track_t *search_for_track(const std::string &search_query);

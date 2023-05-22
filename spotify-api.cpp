@@ -31,42 +31,42 @@ Spotify_API::Spotify_API(std::string &auth_code, const std::string &redirect_uri
 		exit(1);
 	}
 
-	this->_session_api = new Session_API(response_object);
-	this->_session_api->set_base64_id_secret(client_keys_base64);
+	this->session_api = new Session_API(response_object);
+	this->session_api->set_base64_id_secret(client_keys_base64);
 
 	this->_access_token = response_object.access_token;
-	this->_album_api = new Album_API(response_object.access_token);
-	this->_artist_api = new Artist_API(response_object.access_token);
-	this->_episode_api = new Episode_API(response_object.access_token);
-	this->_player_api = new Player_API(response_object.access_token);
-	this->_playlist_api = new Playlist_API(response_object.access_token);
-	this->_track_api = new Track_API(response_object.access_token);
+	this->album_api = new Album_API(response_object.access_token);
+	this->artist_api = new Artist_API(response_object.access_token);
+	this->episode_api = new Episode_API(response_object.access_token);
+	this->player_api = new Player_API(response_object.access_token);
+	this->playlist_api = new Playlist_API(response_object.access_token);
+	this->track_api = new Track_API(response_object.access_token);
 }
 	
 	void Spotify_API::resync_access_token()
 	{
-		std::string temp_token = this->_session_api->get_current_token();
+		std::string temp_token = this->session_api->get_current_token();
 
 		if (this->_access_token == temp_token) return;
 
 		this->_access_token = temp_token;
 
-		this->_album_api->_access_token = this->_access_token;
-		this->_artist_api->_access_token = this->_access_token;
-		this->_episode_api->_access_token = this->_access_token;
-		this->_player_api->_access_token = this->_access_token;
-		this->_playlist_api->_access_token = this->_access_token;
-		this->_track_api->_access_token = this->_access_token;
+		this->album_api->_access_token = this->_access_token;
+		this->artist_api->_access_token = this->_access_token;
+		this->episode_api->_access_token = this->_access_token;
+		this->player_api->_access_token = this->_access_token;
+		this->playlist_api->_access_token = this->_access_token;
+		this->track_api->_access_token = this->_access_token;
 	}
 
 	Spotify_API::~Spotify_API()
 	{
-		delete this->_album_api;
-		delete this->_artist_api;
-		delete this->_episode_api;
-		delete this->_player_api;
-		delete this->_playlist_api;
-		delete this->_session_api;
-		delete this->_track_api;
+		delete this->album_api;
+		delete this->artist_api;
+		delete this->episode_api;
+		delete this->player_api;
+		delete this->playlist_api;
+		delete this->session_api;
+		delete this->track_api;
 	}
 } // namespace spotify_api

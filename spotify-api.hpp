@@ -36,19 +36,20 @@ namespace spotify_api
 	class Spotify_API
 	{
 		private:
-		Album_API *		_album_api;
-		Artist_API *	_artist_api;
-		Episode_API *	_episode_api;
-		Player_API *	_player_api;
-		Playlist_API *	_playlist_api;
-		//TODO: look into possibly merging Session_API into Spotify_API
-
-		Session_API *	_session_api;
-		Track_API *		_track_api;
-
 		std::string		_access_token;
 
 		public:
+		Album_API *		album_api;
+		Artist_API *	artist_api;
+		Episode_API *	episode_api;
+		Player_API *	player_api;
+		Playlist_API *	playlist_api;
+
+		//TODO: look into possibly merging Session_API into Spotify_API
+
+		Session_API *	session_api;
+		Track_API *		track_api;
+
 		/// Start a new Spotify session using an auth code and client keys
 		Spotify_API(std::string &auth_code, const std::string &redirect_uri, std::string &client_keys_base64);
 

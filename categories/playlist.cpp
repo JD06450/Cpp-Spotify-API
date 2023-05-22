@@ -50,7 +50,7 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 	return playlists;
 }
 
-    void object_from_json(const std::string &json_string, playlist_t &output)
+    void Playlist_API::object_from_json(const std::string &json_string, playlist_t &output)
     {
         int step = 1;
         try
