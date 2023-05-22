@@ -4,8 +4,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find and use vcpkg
-set(CMAKE_TOOLCHAIN_FILE "/opt/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "" FORCE)
-set(VCPKG_INSTALLATION_ROOT ${CMAKE_BUILD_DIR}/vcpkg_installed)
+set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "" FORCE)
+#set(VCPKG_INSTALLATION_ROOT ${CMAKE_BUILD_DIR}/vcpkg_installed)
 
 project(Cpp-Spotify-API VERSION 0.1.0)
 
