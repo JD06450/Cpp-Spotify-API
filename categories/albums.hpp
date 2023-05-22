@@ -42,8 +42,9 @@ namespace spotify_api
 	struct album_full_t : public album_t
 	{
 		std::vector<artist_t *> artists;
-		batch_t<struct track_t *> tracks;
+		batch_t<struct track_t> tracks;
 
+		album_full_t() {}
 		album_full_t(const album_t &base) : album_t(base) {};
 		album_full_t(const album_context_t &base) : album_t(base), artists(base.artists) {};
 	};
@@ -54,9 +55,10 @@ namespace spotify_api
 		std::string _access_token;
 		Album_API(const std::string &access_token): _access_token(access_token) {}
 
-		album_t *get_album(const std::string &album_id);
+		album_full_t *get_album(const std::string &album_id);
 		std::vector<album_t> get_albums(const std::vector<std::string> &album_ids);
 		void static object_from_json(const std::string &json_string, album_t *output);
+		void static object_from_json(const std::string &json_string, album_full_t *output);
 	};
 
 } // namespace spotify_api
