@@ -1,7 +1,7 @@
 #include <iostream>
-#include "albums.hpp"
-#include "artists.hpp"
 #include "tracks.hpp"
+
+#include <nlohmann/json.hpp>
 
 namespace json = nlohmann;
 
@@ -12,7 +12,7 @@ track_t *Track_API::search_for_track(const std::string &search_query)
 {
 	track_t *retval = new track_t;
 	std::string query_string = "q=" + http::url_encode(search_query) + "&type=track&limit=1";
-	http::api_response res = http::get(API_PREFIX "/search", query_string, this->_access_token);
+	http::api_response res = http::get(API_PREFIX "/search", query_string, this->access_token);
 
 	if (res.code == 200)
 	{

@@ -15,8 +15,9 @@ namespace spotify_api
 
 	class Show_API
 	{
-		public:
-		std::string _access_token;
+	public:
+		std::string access_token;
+		Show_API(std::string access_token): access_token(access_token) {}
 		void static object_from_json(const std::string &json_string, show_t *output);
 	};
 } // namespace spotify_api

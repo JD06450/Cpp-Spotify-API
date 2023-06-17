@@ -56,7 +56,7 @@ namespace spotify_api
 		bool shuffle_state;
 		std::optional<context_t> context;
 		// Unix timestamp when the data was fetched
-		uint64_t timestamp;
+		unsigned long timestamp;
 		int progress_ms;
 		bool is_playing;
 
@@ -69,6 +69,9 @@ namespace spotify_api
 
 	struct queue_t
 	{
+		/**
+		 * @brief specifies the type of items that are present in the queue. Currently only the values "track" and "episode" are allowed.
+		*/
 		std::string type;
 		std::optional<track_t *> current_track;
 		std::optional<episode_t *> current_episode;
@@ -79,8 +82,8 @@ namespace spotify_api
 	class Player_API
 	{
 		public:
-		std::string _access_token;
-		Player_API(const std::string &access_token): _access_token(access_token) {}
+		std::string access_token;
+		Player_API(std::string access_token): access_token(access_token) {}
 
 		/**
 		* @returns the user's current playback state

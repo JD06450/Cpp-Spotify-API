@@ -6,8 +6,8 @@
 #include <vector>
 #include <optional>
 
-#include "./albums.hpp"
-#include "./artists.hpp"
+#include "albums.hpp"
+#include "artists.hpp"
 #include "common.hpp"
 
 namespace spotify_api
@@ -38,11 +38,9 @@ namespace spotify_api
 
 	class Track_API
 	{
-
 		public:
-		std::string _access_token;
-		Track_API(const std::string &access_token): _access_token(access_token) {}
-
+		std::string access_token;
+		Track_API(std::string access_token): access_token(access_token) {}
 		static void object_from_json(const std::string &json_string, track_t *output);
 		track_t *search_for_track(const std::string &search_query);
 	};

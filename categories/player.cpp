@@ -1,5 +1,7 @@
 #include "player.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace json = nlohmann;
 
 namespace spotify_api
@@ -23,7 +25,7 @@ namespace spotify_api
 	{
 		playback_state_t *player_state = new playback_state_t;
 
-		http::api_response response = http::get(API_PREFIX "/me/player", std::string(""), this->_access_token);
+		http::api_response response = http::get(API_PREFIX "/me/player", std::string(""), this->access_token);
 
 		if (response.code != 200) return player_state;
 		
@@ -90,12 +92,12 @@ namespace spotify_api
 	void Player_API::transfer_playback(const std::string &device_id, bool play)
 	{
 		std::string post_data = "{\"device_ids\": [\"" + device_id + "\"], \"play\": " + (play ? "true" : "false") + "}";
-		http::put(API_PREFIX "/me/player", post_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player", post_data, this->access_token, true);
 	}
 
 	std::vector<playback_device_t> Player_API::get_available_devices()
 	{
-		http::api_response devices_string = http::get(API_PREFIX "/me/player/devices", std::string(""), this->_access_token);
+		http::api_response devices_string = http::get(API_PREFIX "/me/player/devices", std::string(""), this->access_token);
 		std::vector<playback_device_t> devices = {};
 
 		if (devices_string.code != 200) return devices;
@@ -122,7 +124,7 @@ namespace spotify_api
 	track_t *Player_API::get_currently_playing_track()
 	{
 		track_t *current_track = new track_t;
-		http::api_response response = http::get(API_PREFIX "/me/player/currently-playing", std::string(""), this->_access_token);
+		http::api_response response = http::get(API_PREFIX "/me/player/currently-playing", std::string(""), this->access_token);
 		printf("current track res code: %u\n", response.code);
 		if (response.code == 200)
 		{
@@ -139,19 +141,19 @@ namespace spotify_api
 		put_data["offset"] = {{"position", offset}};
 		put_data["position_ms"] = position_ms;
 
-		http::put(API_PREFIX "/me/player/play", put_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player/play", put_data, this->access_token, true);
 	}
 
 	void Player_API::pause_playback()
 	{
-		http::put(API_PREFIX "/me/player/pause", std::string(), this->_access_token, true);
+		http::put(API_PREFIX "/me/player/pause", std::string(), this->access_token, true);
 	}
 
 	void Player_API::seek_to_position(int position_ms)
 	{
 		json::json put_data;
 		put_data["position_ms"] = position_ms;
-		http::put(API_PREFIX "/me/player/seek", put_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player/seek", put_data, this->access_token, true);
 	}
 
 	void Player_API::set_repeat_mode(Player_API::REPEAT_MODE state)
@@ -172,7 +174,7 @@ namespace spotify_api
 			put_data["state"] = "off";
 			break;
 		}
-		http::put(API_PREFIX "/me/player/repeat", put_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player/repeat", put_data, this->access_token, true);
 	}
 
 	void Player_API::set_volume(int volume_percent)
@@ -184,14 +186,14 @@ namespace spotify_api
 
 		put_data["volume_percent"] = volume_percent;
 
-		http::put(API_PREFIX "/me/player/volume", put_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player/volume", put_data, this->access_token, true);
 	}
 	
 	void Player_API::set_shuffle(bool state)
 	{
 		json::json put_data;
 		put_data["state"] = state;
-		http::put(API_PREFIX "/me/player/shuffle", put_data, this->_access_token, true);
+		http::put(API_PREFIX "/me/player/shuffle", put_data, this->access_token, true);
 	}
 
 	void Player_API::object_from_json(const std::string &json_string, Player_API::recent_tracks_t *output)
@@ -240,7 +242,7 @@ namespace spotify_api
 			query_data += "&" + std::string(after ? "after" : "before") + "=" + std::to_string(timestamp);
 		}
 		
-		auto response = http::get(API_PREFIX "/me/player/recently-played", query_data, this->_access_token);
+		auto response = http::get(API_PREFIX "/me/player/recently-played", query_data, this->access_token);
 
 		if (response.code != 200) {
 			return recent_tracks;
@@ -293,20 +295,19 @@ namespace spotify_api
 	{
 		queue_t * queue = new queue_t;
 
-		auto api_response = http::get(API_PREFIX "/me/player/queue", std::string(), this->_access_token);
+		auto api_response = http::get(API_PREFIX "/me/player/queue", std::string(), this->access_token);
 
 		if (api_response.code != 200) {
 			return queue;
 		}
 
 		object_from_json(api_response.body, queue);
-		return queue;
 	}
 	
 	track_t * Player_API::search_for_track(const std::string &q)
 	{
 		std::string query = "q=" + q + "&type=track";
-		auto response = http::get(API_PREFIX "/search", query, this->_access_token);
+		auto response = http::get(API_PREFIX "/search", query, this->access_token);
 
 		if (response.code != 200) {
 			return new track_t;

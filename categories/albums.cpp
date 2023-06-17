@@ -1,6 +1,8 @@
 #include <iostream>
 #include "albums.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace json = nlohmann;
 
 namespace spotify_api
@@ -12,7 +14,7 @@ album_full_t *Album_API::get_album(const std::string &album_id)
     std::string url = API_PREFIX "/albums/";
     url += album_id;
 
-    http::api_response response = http::get(url.c_str(), std::string(""), this->_access_token);
+    http::api_response response = http::get(url.c_str(), std::string(""), this->access_token);
     if (response.code == 200)
     {
         object_from_json(response.body, retval);
@@ -36,7 +38,7 @@ std::vector<album_t> Album_API::get_albums(const std::vector<std::string> &album
             query_string += album_ids.at(i) + ",";
         }
         query_string = std::regex_replace(query_string, std::regex(",+$"), "");
-        http::api_response batch_response = http::get(API_PREFIX "/albums", query_string, this->_access_token);
+        http::api_response batch_response = http::get(API_PREFIX "/albums", query_string, this->access_token);
         if (batch_response.code == 200)
         {
             json::json albums_json = json::json::parse(batch_response.body)["albums"];
@@ -110,6 +112,29 @@ void Album_API::object_from_json(const std::string &json_string, album_t *output
         output->total_tracks = json_object["total_tracks"];
 
         output->uri = json_object["uri"];
+
+        // if (json_object.contains("tracks"))
+        // {
+        //     json::json json_tracks = json_object["tracks"];
+        //     batch_t<track_t> temp_track;
+        //     temp_track.href = json_tracks["href"];
+        //     temp_track.limit = json_tracks["limit"];
+        //     temp_track.offset = json_tracks["offset"];
+        //     output->tracks.total = json_tracks["total"];
+        //     if (!json_tracks["next"].is_null())
+        //         output->tracks.next = json_tracks["next"];
+        //     if (!json_tracks["previous"].is_null())
+        //         output->tracks.previous = json_tracks["previous"];
+        //     json_tracks = json_tracks["items"];
+        //     output->tracks.items.reserve(json_tracks.size());
+        //     for (auto track = json_tracks.begin(); track != json_tracks.end(); ++track)
+        //     {
+        //         spotify_api::track_t *temp = new spotify_api::track_t;
+        //         Track_API::object_from_json(track.value().dump(), temp);
+        //         output->tracks.items.push_back(temp);
+        //     }
+        // }
+        // output->tracks.items.shrink_to_fit();
     }
     catch (const std::exception &e)
     {
@@ -117,35 +142,6 @@ void Album_API::object_from_json(const std::string &json_string, album_t *output
         fprintf(stderr, "\033[31mspotify-api/endpoints.cpp: object_from_json(): Error: Failed to convert json data to album.\nJson string: %s\nNow exiting.\n\033[39m", json_string.c_str());
         exit(1);
     }
-}
-
-void Album_API::object_from_json(const std::string &json_string, album_full_t *output)
-{
-    object_from_json(json_string, (album_t *) output);
-    json::json json_object = json::json::parse(json_string);
-    
-    if (json_object.contains("tracks"))
-    {
-        json::json json_tracks = json_object["tracks"];
-        batch_t<track_t> temp_track;
-        temp_track.href = json_tracks["href"];
-        temp_track.limit = json_tracks["limit"];
-        temp_track.offset = json_tracks["offset"];
-        output->tracks.total = json_tracks["total"];
-        if (!json_tracks["next"].is_null())
-            output->tracks.next = json_tracks["next"];
-        if (!json_tracks["previous"].is_null())
-            output->tracks.previous = json_tracks["previous"];
-        json_tracks = json_tracks["items"];
-        output->tracks.items.reserve(json_tracks.size());
-        for (auto track = json_tracks.begin(); track != json_tracks.end(); ++track)
-        {
-            spotify_api::track_t *temp = new spotify_api::track_t;
-            Track_API::object_from_json(track.value().dump(), temp);
-            output->tracks.items.push_back(temp);
-        }
-    }
-    output->tracks.items.shrink_to_fit();
 }
 
 } // namespace spotify_api

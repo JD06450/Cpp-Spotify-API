@@ -24,7 +24,7 @@ namespace spotify_api
 		owner_t owner;
 		bool is_public;
 		std::string snapshot_id = "";
-		batch_t<track_t> tracks;
+		batch_t<track_t *> tracks;
 		const std::string type = "playlist";
 		std::string uri = "";
 	};
@@ -32,8 +32,8 @@ namespace spotify_api
 	class Playlist_API
 	{
 		public:
-		std::string _access_token;
-		Playlist_API(const std::string &access_token): _access_token(access_token) {}
+		std::string access_token;
+		Playlist_API(std::string access_token): access_token(access_token) {}
 
 		playlist_t *get_playlist();
 		std::vector<playlist_t *> get_my_playlists(int limit = 0);

@@ -29,10 +29,10 @@ namespace spotify_api
 	class Artist_API
 	{
 	public:
-		std::string _access_token;
-		Artist_API(const std::string &access_token): _access_token(access_token) {}
-
+		std::string access_token;
 		void static object_from_json(const std::string &json_string, artist_t *output);
+
+		Artist_API(std::string access_token): access_token(access_token) {}
 	};
 
 } // namespace spotify_api

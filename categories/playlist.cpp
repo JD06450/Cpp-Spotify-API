@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include "playlist.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace json = nlohmann;
 
 namespace spotify_api
@@ -13,7 +15,7 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 	
 	// Sending a preliminary request to get the total number of playlists to return
 	// makes the code a bit more readable and easy to work with
-	http::api_response temp_res = http::get(API_PREFIX "/me/playlists", "?limit=1", this->_access_token);
+	http::api_response temp_res = http::get(API_PREFIX "/me/playlists", "?limit=1", this->access_token);
 
 	int total_playlists = json::json::parse(temp_res.body)["total"];
 	if (limit > total_playlists || limit < 1) limit = total_playlists;
@@ -25,7 +27,7 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 	{
 		std::stringstream query;
 		query << "?limit=" << batch_size << "&offset" << batch * batch_size;
-		http::api_response batch_res = http::get(API_PREFIX "/me/playlists", query.str(), this->_access_token);
+		http::api_response batch_res = http::get(API_PREFIX "/me/playlists", query.str(), this->access_token);
 		printf("Batch Code: %i\n", batch_res.code);
 		if (batch_res.code == 429) {
 			printf("\033[33mspotify-api.cpp: get_my_playlists(): Warning: Rate limit exceeded.\n\033[39m");
@@ -50,7 +52,7 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 	return playlists;
 }
 
-    void Playlist_API::object_from_json(const std::string &json_string, playlist_t &output)
+    void object_from_json(const std::string &json_string, playlist_t &output)
     {
         int step = 1;
         try
@@ -66,7 +68,11 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
             step++;
             
             json::json temp_obj;
-            output.external_urls = json_iterate_map(json_object["external_urls"]);
+
+            for (auto item = json_object["external_urls"].begin(); item != json_object["external_urls"].end(); ++item)
+            {
+                output.external_urls.emplace(item.key(), item.value().get<std::string>());
+            }
             step++;
             
             if (json_object.contains("followers"))
@@ -119,7 +125,11 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
                 step += 2;
             }
             
-            output.owner.external_urls = json_iterate_map(json_owner["external_urls"]);
+            step++;
+            for (auto item = json_owner["external_urls"].begin(); item != json_owner["external_urls"].end(); ++item)
+            {
+                output.owner.external_urls.emplace(item.key(), item.value().get<std::string>());
+            }
             step++;
             
             output.snapshot_id = json_object["snapshot_id"];

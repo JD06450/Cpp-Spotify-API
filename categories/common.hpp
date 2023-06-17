@@ -6,9 +6,7 @@
 
 #include <string>
 #include <map>
-#include <nlohmann/json.hpp>
-
-std::map<std::string, std::string> json_iterate_map(const nlohmann::json &json_map);
+#include <vector>
 
 namespace spotify_api
 {
@@ -40,7 +38,7 @@ namespace spotify_api
 	struct batch_t
 	{
 		std::string href = "";
-		std::vector<Item_Type *> items;
+		std::vector<Item_Type> items;
 		int limit = -1;
 		std::string next = "";
 		int offset = 0;

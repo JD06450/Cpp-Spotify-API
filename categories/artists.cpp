@@ -1,6 +1,8 @@
 #include <iostream>
 #include "artists.hpp"
 
+#include <nlohmann/json.hpp>
+
 namespace json = nlohmann;
 
 namespace spotify_api
