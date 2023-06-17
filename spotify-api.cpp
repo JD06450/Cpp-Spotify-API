@@ -45,18 +45,18 @@ Spotify_API::Spotify_API(std::string &auth_code, const std::string &redirect_uri
 	
 	void Spotify_API::resync_access_token()
 	{
-		std::string temp_token = this->session_api->get_current_token();
+		std::string temp_token = this->session_api->get_access_token();
 
 		if (this->_access_token == temp_token) return;
 
 		this->_access_token = temp_token;
 
-		this->album_api->_access_token = this->_access_token;
-		this->artist_api->_access_token = this->_access_token;
-		this->episode_api->_access_token = this->_access_token;
-		this->player_api->_access_token = this->_access_token;
-		this->playlist_api->_access_token = this->_access_token;
-		this->track_api->_access_token = this->_access_token;
+		this->album_api->access_token = this->_access_token;
+		this->artist_api->access_token = this->_access_token;
+		this->episode_api->access_token = this->_access_token;
+		this->player_api->access_token = this->_access_token;
+		this->playlist_api->access_token = this->_access_token;
+		this->track_api->access_token = this->_access_token;
 	}
 
 	Spotify_API::~Spotify_API()

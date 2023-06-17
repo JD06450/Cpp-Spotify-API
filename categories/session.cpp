@@ -20,6 +20,7 @@ namespace spotify_api
 		this->_token_expiration_time = this->_token_grant_time + token_obj.expires_in;
 		this->_refresh_done = true;
 		this->_refresh_thread = nullptr;
+		g_access_token.~lock_guard();
 
 		this->new_refresh_thread();
 		std::cout << "past setTimeout" << std::endl;
