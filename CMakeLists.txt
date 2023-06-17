@@ -3,13 +3,11 @@ cmake_minimum_required(VERSION 3.23.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find and use vcpkg
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake CACHE STRING "" FORCE)
-#set(VCPKG_INSTALLATION_ROOT ${CMAKE_BUILD_DIR}/vcpkg_installed)
-
 project(Cpp-Spotify-API VERSION 0.1.0)
 
-add_library(Cpp-Spotify-API SHARED
+# TODO: Add option to compile to shared lib instead of static
+
+add_library(Cpp-Spotify-API STATIC
 	spotify-api.cpp
 	curl-util.cpp
 	categories/albums.cpp
