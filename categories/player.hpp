@@ -277,6 +277,13 @@ namespace spotify_api
 		 * @returns The track that best matches the query
 		*/
 		track_t * search_for_track(const std::string &q);
+
+		/**
+		 * @brief Adds the specified item to the user's playback queue
+		 * @note Endpoint: /me/player/queue
+		 * @param item_uri The Spotify URI of the item to add. Track and episode URIs allowed only.
+		*/
+		void add_item_to_playback_queue(const std::string &item_uri);
 	};
 
 } // namespace spotify_api

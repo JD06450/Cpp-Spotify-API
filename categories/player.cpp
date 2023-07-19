@@ -1,3 +1,4 @@
+#include <iostream>
 #include "player.hpp"
 
 #include <nlohmann/json.hpp>
@@ -275,7 +276,7 @@ namespace spotify_api
 				Track_API::object_from_json(json_object["currently_playing"].dump(), temp);
 				output->current_track = temp;
 			}
-			output->tracks = {};
+			output->tracks.emplace(std::vector<track_t *>());
 			
 			for (auto i = json_object["queue"].begin(); i != json_object["queue"].end(); ++i)
 			{
@@ -309,14 +310,30 @@ namespace spotify_api
 		std::string query = "q=" + q + "&type=track";
 		auto response = http::get(API_PREFIX "/search", query, this->access_token);
 
+		std::cout << "response: " << response.body << '\n';
+
 		if (response.code != 200) {
+			std::cerr << "failed to search for track: " << response.code << '\n';
 			return new track_t;
 		}
 
 		json::json temp = json::json::parse(response.body);
 
 		track_t *top_track = new track_t;
-		Track_API::object_from_json(temp["items"][0].dump(), top_track);
+		Track_API::object_from_json(temp["tracks"]["items"][0].dump(), top_track);
 		return top_track;
+	}
+
+	void Player_API::add_item_to_playback_queue(const std::string &item_uri)
+	{
+		json::json post_data = {};
+		std::cout << "input: " << post_data.dump() << '\n';
+
+		std::string url = API_PREFIX "/me/player/queue?uri=";
+		url += http::url_encode(item_uri);
+
+		auto response = http::post(url.c_str(), post_data.dump(), this->access_token, true);
+
+		std::cout << "response code: " << response.code << '\n';
 	}
 } // namespace spotify_api
