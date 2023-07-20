@@ -11,8 +11,34 @@ size_t curl_callback(char *contents, size_t size, size_t nmemb, std::string* out
     return realsize;
 }
 
+
 namespace http
 {
+    std::string method_to_string(REQUEST_METHOD method)
+    {
+        switch (method) {
+        case REQUEST_METHOD::POST:
+            return "POST";
+        case REQUEST_METHOD::PUT:
+            return "PUT";
+        case REQUEST_METHOD::DELETE:
+            return "DELETE";
+        case REQUEST_METHOD::OPTIONS:
+            return "OPTIONS";
+        case REQUEST_METHOD::PATCH:
+            return "PATCH";
+        case REQUEST_METHOD::HEAD:
+            return "HEAD";
+        case REQUEST_METHOD::CONNECT:
+            return "CONNECT";
+        case REQUEST_METHOD::TRACE:
+            return "TRACE";
+        case REQUEST_METHOD::GET:
+        default:
+            return "GET";
+        };
+    }
+
     std::string url_encode(const std::string &to_encode)
     {
         std::ostringstream encoded;
@@ -121,7 +147,7 @@ namespace http
         return retval;
     }
 
-    api_response put(const char *url, const std::string &post_data, const std::string &auth_header_value, bool is_token) {
+    api_response request(const char *url, REQUEST_METHOD method, const std::string &body_data, const std::string &auth_header_value, bool is_token) {
         api_response retval;
 
         CURLcode ret;
@@ -137,13 +163,13 @@ namespace http
         // curl_easy_setopt(hnd, CURLOPT_VERBOSE, 1);
         curl_easy_setopt(hnd, CURLOPT_URL, url);
         curl_easy_setopt(hnd, CURLOPT_NOPROGRESS, 1L);
-        curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, post_data.c_str());
-        curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)post_data.length());
+        curl_easy_setopt(hnd, CURLOPT_POSTFIELDS, body_data.c_str());
+        curl_easy_setopt(hnd, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)body_data.length());
         curl_easy_setopt(hnd, CURLOPT_HTTPHEADER, slist1);
         curl_easy_setopt(hnd, CURLOPT_USERAGENT, "curl/7.84.0");
         curl_easy_setopt(hnd, CURLOPT_MAXREDIRS, 50L);
         curl_easy_setopt(hnd, CURLOPT_HTTP_VERSION, (long)CURL_HTTP_VERSION_2TLS);
-        curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, "PUT");
+        curl_easy_setopt(hnd, CURLOPT_CUSTOMREQUEST, method_to_string(method));
         curl_easy_setopt(hnd, CURLOPT_TCP_KEEPALIVE, 1L);
         curl_easy_setopt(hnd, CURLOPT_WRITEDATA, &(retval.body));
         curl_easy_setopt(hnd, CURLOPT_WRITEFUNCTION, curl_callback);
