@@ -16,12 +16,12 @@ namespace spotify_api
 		int total;
 	};
 
-	struct image_t
+	typedef struct
 	{
 		std::string url;
 		int width;
 		int height;
-	};
+	} image_t;
 
 	struct owner_t
 	{
@@ -35,16 +35,18 @@ namespace spotify_api
 	};
 
 	template <typename Item_Type>
-	struct batch_t
+	struct page_t
 	{
 		std::string href = "";
-		std::vector<Item_Type> items;
-		int limit = -1;
+		std::vector<Item_Type> items = {};
+		int limit = 20;
 		std::string next = "";
 		int offset = 0;
 		std::string previous = "";
 		int total = 0;
 	};
+
+	void object_from_json(const std::string &json_string, image_t *output);
 } // namespace spotify_api
 
 #endif

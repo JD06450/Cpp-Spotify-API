@@ -24,7 +24,7 @@ namespace spotify_api
 		owner_t owner;
 		bool is_public;
 		std::string snapshot_id = "";
-		batch_t<track_t *> tracks;
+		page_t<track_t *> tracks;
 		const std::string type = "playlist";
 		std::string uri = "";
 	};
