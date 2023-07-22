@@ -52,127 +52,127 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 	return playlists;
 }
 
-    void object_from_json(const std::string &json_string, playlist_t &output)
-    {
-        int step = 1;
-        try
-        {
-            json::json json_object = json::json::parse(json_string);
-            step++;
-            output.collaborative = json_object["collaborative"];
-            step++;
-            if (json_object.contains("description") && !json_object["description"].is_null())
-            {
-                output.description = json_object["description"];
-            }
-            step++;
-            
-            json::json temp_obj;
+	void object_from_json(const std::string &json_string, playlist_t &output)
+	{
+		int step = 1;
+		try
+		{
+			json::json json_object = json::json::parse(json_string);
+			step++;
+			output.collaborative = json_object["collaborative"];
+			step++;
+			if (json_object.contains("description") && !json_object["description"].is_null())
+			{
+				output.description = json_object["description"];
+			}
+			step++;
+			
+			json::json temp_obj;
 
-            for (auto item = json_object["external_urls"].begin(); item != json_object["external_urls"].end(); ++item)
-            {
-                output.external_urls.emplace(item.key(), item.value().get<std::string>());
-            }
-            step++;
-            
-            if (json_object.contains("followers"))
-            {
-                output.followers.href = json_object["followers"]["href"];
-                output.followers.total = json_object["followers"]["total"];
-            }
-            step++;
-            
-            output.href = json_object["href"];
-            step++;
-            output.id = json_object["id"];
-            step++;
+			for (auto item = json_object["external_urls"].begin(); item != json_object["external_urls"].end(); ++item)
+			{
+				output.external_urls.emplace(item.key(), item.value().get<std::string>());
+			}
+			step++;
+			
+			if (json_object.contains("followers"))
+			{
+				output.followers.href = json_object["followers"]["href"];
+				output.followers.total = json_object["followers"]["total"];
+			}
+			step++;
+			
+			output.href = json_object["href"];
+			step++;
+			output.id = json_object["id"];
+			step++;
 
-            temp_obj = json_object["images"];
-            output.images.reserve(temp_obj.size());
-            for (auto img = temp_obj.begin(); img != temp_obj.end(); ++img)
-            {
-                image_t temp;
-                temp.height = !img.value()["height"].is_null() ? img.value()["height"].get<int>() : 0;
-                temp.width = !img.value()["width"].is_null() ? img.value()["width"].get<int>() : 0;
-                temp.url = img.value()["url"];
-                output.images.push_back(temp);
-            }
-            output.images.shrink_to_fit();
-            step++;
+			temp_obj = json_object["images"];
+			output.images.reserve(temp_obj.size());
+			for (auto img = temp_obj.begin(); img != temp_obj.end(); ++img)
+			{
+				image_t temp;
+				temp.height = !img.value()["height"].is_null() ? img.value()["height"].get<int>() : 0;
+				temp.width = !img.value()["width"].is_null() ? img.value()["width"].get<int>() : 0;
+				temp.url = img.value()["url"];
+				output.images.push_back(temp);
+			}
+			output.images.shrink_to_fit();
+			step++;
 
-            output.is_public = json_object["public"];
-            step++;
-            output.name = json_object["name"];
-            step++;
-            
-            json::json json_owner = json_object["owner"];
-            
-            output.owner.display_name = json_owner["display_name"];
-            step++;
-            output.owner.href = json_owner["href"];
-            step++;
-            output.owner.id = json_owner["id"];
-            step++;
-            output.owner.uri = json_owner["uri"];
-            step++;
-            if (json_owner.contains("followers"))
-            {
-                output.owner.followers.href = json_owner["followers"]["href"];
-                step++;
-                output.owner.followers.total = json_owner["followers"]["total"];
-                step++;
-            } else {
-                step += 2;
-            }
-            
-            step++;
-            for (auto item = json_owner["external_urls"].begin(); item != json_owner["external_urls"].end(); ++item)
-            {
-                output.owner.external_urls.emplace(item.key(), item.value().get<std::string>());
-            }
-            step++;
-            
-            output.snapshot_id = json_object["snapshot_id"];
-            step++;
-            output.uri = json_object["uri"];
-            step++;
-            
-            if (json_object.contains("tracks"))
-            {
-                json::json json_tracks = json_object["tracks"];
-                output.tracks.href = json_tracks["href"];
-                output.tracks.total = json_tracks["total"];
-                
-                if (json_tracks.contains("limit"))
-                    output.tracks.limit = json_tracks["limit"];
-                if (json_tracks.contains("offset"))
-                    output.tracks.offset = json_tracks["offset"];
-                
-                if (!json_tracks["next"].is_null())
-                    output.tracks.next = json_tracks["next"];
-                if (!json_tracks["previous"].is_null())
-                    output.tracks.previous = json_tracks["previous"];
-                
-                if (json_tracks.contains("items"))
-                {
-                    json_tracks = json_tracks["items"];
-                    output.tracks.items.reserve(json_tracks.size());
-                    for (auto track = json_tracks.begin(); track != json_tracks.end(); ++track)
-                    {
-                        spotify_api::track_t *temp = new spotify_api::track_t;
-                        Track_API::object_from_json(track.value().dump(), temp);
-                        output.tracks.items.push_back(temp);
-                    }
-                }
-                output.tracks.items.shrink_to_fit();
-            }
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-            
-            fprintf(stderr, "\033[31mspotify-api.cpp: object_from_json(): Error: Failed to convert json data to playlist at step %i.\nJson string: %s\nNow exiting.\n\033[39m", step, json::json::parse(json_string).dump(1, '\t').c_str());
-            exit(1);
-        }
-    }
+			output.is_public = json_object["public"];
+			step++;
+			output.name = json_object["name"];
+			step++;
+			
+			json::json json_owner = json_object["owner"];
+			
+			output.owner.display_name = json_owner["display_name"];
+			step++;
+			output.owner.href = json_owner["href"];
+			step++;
+			output.owner.id = json_owner["id"];
+			step++;
+			output.owner.uri = json_owner["uri"];
+			step++;
+			if (json_owner.contains("followers"))
+			{
+				output.owner.followers.href = json_owner["followers"]["href"];
+				step++;
+				output.owner.followers.total = json_owner["followers"]["total"];
+				step++;
+			} else {
+				step += 2;
+			}
+			
+			step++;
+			for (auto item = json_owner["external_urls"].begin(); item != json_owner["external_urls"].end(); ++item)
+			{
+				output.owner.external_urls.emplace(item.key(), item.value().get<std::string>());
+			}
+			step++;
+			
+			output.snapshot_id = json_object["snapshot_id"];
+			step++;
+			output.uri = json_object["uri"];
+			step++;
+			
+			if (json_object.contains("tracks"))
+			{
+				json::json json_tracks = json_object["tracks"];
+				output.tracks.href = json_tracks["href"];
+				output.tracks.total = json_tracks["total"];
+				
+				if (json_tracks.contains("limit"))
+					output.tracks.limit = json_tracks["limit"];
+				if (json_tracks.contains("offset"))
+					output.tracks.offset = json_tracks["offset"];
+				
+				if (!json_tracks["next"].is_null())
+					output.tracks.next = json_tracks["next"];
+				if (!json_tracks["previous"].is_null())
+					output.tracks.previous = json_tracks["previous"];
+				
+				if (json_tracks.contains("items"))
+				{
+					json_tracks = json_tracks["items"];
+					output.tracks.items.reserve(json_tracks.size());
+					for (auto track = json_tracks.begin(); track != json_tracks.end(); ++track)
+					{
+						spotify_api::track_t *temp = new spotify_api::track_t;
+						Track_API::object_from_json(track.value().dump(), temp);
+						output.tracks.items.push_back(temp);
+					}
+				}
+				output.tracks.items.shrink_to_fit();
+			}
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << e.what() << '\n';
+			
+			fprintf(stderr, "\033[31mspotify-api.cpp: object_from_json(): Error: Failed to convert json data to playlist at step %i.\nJson string: %s\nNow exiting.\n\033[39m", step, json::json::parse(json_string).dump(1, '\t').c_str());
+			exit(1);
+		}
+	}
 } // namespace spotify_api

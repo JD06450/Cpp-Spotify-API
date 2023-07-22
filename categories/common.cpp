@@ -8,25 +8,25 @@ namespace spotify_api
 
 std::string truncate_id(const std::string &full_id)
 {
-    size_t id_start = full_id.find_last_of(':');
-    return id_start != std::string::npos ? full_id.substr(id_start + 1) : full_id;
+	size_t id_start = full_id.find_last_of(':');
+	return id_start != std::string::npos ? full_id.substr(id_start + 1) : full_id;
 }
 
 std::vector<std::string> truncate_ids(const std::vector<std::string> &full_ids, size_t limit)
 {
-    std::vector<std::string> truncated_ids;
+	std::vector<std::string> truncated_ids;
 
-    int i = 0;
+	int i = 0;
 
-    for (std::string id : full_ids)
-    {
-        if (limit && i == limit) break;
-        size_t id_start = id.find_last_of(':');
-        truncated_ids.push_back(id_start != std::string::npos ? id.substr(id_start + 1) : id);
-        i++;
-    }
+	for (std::string id : full_ids)
+	{
+		if (limit && i == limit) break;
+		size_t id_start = id.find_last_of(':');
+		truncated_ids.push_back(id_start != std::string::npos ? id.substr(id_start + 1) : id);
+		i++;
+	}
 
-    return truncated_ids;
+	return truncated_ids;
 }
 
 template <typename Item_Type>
