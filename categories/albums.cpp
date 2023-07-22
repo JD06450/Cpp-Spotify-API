@@ -5,29 +5,6 @@
 
 namespace json = nlohmann;
 
-std::string truncate_id(const std::string &full_id)
-{
-    size_t id_start = full_id.find_last_of(':');
-    return id_start != std::string::npos ? full_id.substr(id_start + 1) : full_id;
-}
-
-std::vector<std::string> truncate_ids(const std::vector<std::string> &full_ids, size_t limit = 0)
-{
-    std::vector<std::string> truncated_ids;
-
-    int i = 0;
-
-    for (std::string id : full_ids)
-    {
-        if (limit && i == limit) break;
-        size_t id_start = id.find_last_of(':');
-        truncated_ids.push_back(id_start != std::string::npos ? id.substr(id_start + 1) : id);
-        i++;
-    }
-
-    return truncated_ids;
-}
-
 namespace spotify_api
 {
 
@@ -130,9 +107,7 @@ album_t * Album_API::object_from_json(const std::string &json_string)
         temp = json_object.value("artists", json::json::array());
         for (auto artist = temp.begin(); artist != temp.end(); ++artist)
         {
-            artist_t *temp_artist;
-            Artist_API::object_from_json(artist.value().dump(), temp_artist);
-            output->artists.push_back(temp_artist);
+            output->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
         }
 
         output->tracks = json_object.contains("tracks") ? parse_tracks(json_object["tracks"]) : page_t<struct track_t *>();

@@ -39,12 +39,13 @@ namespace spotify_api
 		std::vector<std::string> genres;
 		uint8_t popularity;
 		std::string label;
-		std::vector<struct artist_t *> artists;
+		std::vector<artist_t *> artists;
 		page_t<struct track_t *> tracks;
 	} album_t;
 
 	class Album_API
 	{
+
 		public:
 		std::string access_token;	
 
