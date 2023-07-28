@@ -294,11 +294,6 @@ namespace spotify_api
 		} recommendation_filter_t;
 
 		std::pair<std::vector<recommendation_seed_t>, std::vector<track_t *>> * get_recommendations(const recommendation_filter_t &filter);
-
-		//Search API
-		track_t *search_for_track(const std::string &search_query);
-
-		
 	};
 } // namespace spotify_api
 

@@ -10,7 +10,7 @@
 
 namespace spotify_api
 {
-	struct playback_device_t
+	typedef struct
 	{
 		std::string id;
 		// If this device is the currently active device
@@ -22,7 +22,9 @@ namespace spotify_api
 		std::string name;
 		std::string type;
 		int volume_percent;
-	};
+		
+	} playback_device_t;
+	playback_device_t * parse_playback_device(const std::string &json_string);
 
 	struct context_t
 	{
@@ -31,11 +33,12 @@ namespace spotify_api
 		std::map<std::string, std::string> external_urls;
 		std::string uri;
 	};
+	context_t * parse_player_context(const std::string &json_string);
 
 	// According to the spotify api docs, all of these options are technically "optional" in an api response,
 	// but if any option is not present, then it shall be defaulted to false
 
-	struct context_actions_t
+	typedef struct
 	{
 		bool interrupting_playback;
 		bool pausing;
@@ -47,9 +50,10 @@ namespace spotify_api
 		bool toggling_shuffle;
 		bool toggling_repeat_track;
 		bool transfer_playback;
-	};
+	} context_actions_t;
+	context_actions_t * parse_context_actions(const std::string &json_string);
 
-	struct playback_state_t
+	typedef struct
 	{
 		playback_device_t device;
 		std::string repeat_state;
@@ -65,9 +69,10 @@ namespace spotify_api
 		std::string currently_playing_type;
 		// A list of actions that can be performed and whether or not that action is allowed within the current context
 		context_actions_t actions;
-	};
+	} playback_state_t;
+	playback_state_t * parse_playback_state(const std::string &json_string);
 
-	struct queue_t
+	typedef struct
 	{
 		/**
 		 * @brief specifies the type of items that are present in the queue. Currently only the values "track" and "episode" are allowed.
@@ -77,8 +82,34 @@ namespace spotify_api
 		std::optional<episode_t *> current_episode;
 		std::optional<std::vector<track_t *>> tracks;
 		std::optional<std::vector<episode_t *>> episodes;
-	};
+	} queue_t;
+	queue_t * parse_queue(const std::string &json_string);
 
+	typedef struct {
+		track_t * track;
+		std::string played_at;
+		context_t context;
+	} track_history_t;
+
+	typedef struct {
+		std::string href;
+		int limit;
+		std::string next;
+		
+		typedef struct
+		{
+			int before;
+			int after;
+		} cursor_t;
+
+		cursor_t cursor;
+		
+		int total;
+		std::vector<track_history_t> items;
+	} recent_tracks_t;
+
+	recent_tracks_t * parse_recent_tracks(const std::string &json_string);
+		
 	class Player_API
 	{
 		public:
@@ -226,31 +257,7 @@ namespace spotify_api
 		void set_shuffle(bool state);
 
 
-		struct track_history_t {
-			track_t track;
-			std::string played_at;
-			context_t context;
-		};
 
-		struct recent_tracks_t {
-			std::string href;
-			int limit;
-			std::string next;
-			
-			struct cursor_t
-			{
-				int before;
-				int after;
-			} cursor;
-			
-			int total;
-			std::vector<track_history_t> items;
-		};
-
-		void static object_from_json(const std::string &json_string, queue_t *output);
-		void static object_from_json(const std::string &json_string, context_t *output);
-		void static object_from_json(const std::string &json_string, recent_tracks_t *output);
-		
 		/**
 		 * @brief Get tracks from the current user's recently played tracks. Note: Currently doesn't support podcast episodes.
 		 * @param limit (Optional) The maximum number of items to return. Default: 20. Minimum: 1. Maximum: 50.
@@ -271,19 +278,20 @@ namespace spotify_api
 		queue_t * get_queue();
 
 		/**
+		 * @brief Adds the specified item to the user's playback queue
+		 * @note Endpoint: /me/player/queue
+		 * @param item_uri The Spotify URI of the item to add. Track and episode URIs allowed only.
+		*/
+		void add_item_to_playback_queue(const std::string &item_uri);
+		
+		/**
 		 * @brief Use the search endpoint to search for a track
 		 * @note Endpoint: /search
 		 * @param q The search query
 		 * @returns The track that best matches the query
 		*/
 		track_t * search_for_track(const std::string &q);
-
-		/**
-		 * @brief Adds the specified item to the user's playback queue
-		 * @note Endpoint: /me/player/queue
-		 * @param item_uri The Spotify URI of the item to add. Track and episode URIs allowed only.
-		*/
-		void add_item_to_playback_queue(const std::string &item_uri);
+		//TODO: support for all item types
 	};
 
 } // namespace spotify_api
