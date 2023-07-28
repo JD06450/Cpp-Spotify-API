@@ -8,25 +8,6 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-page_t<struct track_t *> parse_tracks(const json::json &json_tracks)
-{
-	page_t<struct track_t *> tracks;
-	tracks.href = json_tracks["href"];
-	tracks.limit = json_tracks["limit"];
-	tracks.next = json_tracks.value("next", "");
-	tracks.offset = json_tracks["offset"];
-	tracks.previous = json_tracks.value("previous", "");
-	tracks.total = json_tracks["total"];
-
-	for (auto track = json_tracks["items"].begin(); track != json_tracks["items"].end(); ++track)
-	{
-		track_t * temp;
-		Track_API::object_from_json(track.value().dump(), temp);
-		tracks.items.push_back(temp);
-	}
-	return std::move(tracks);
-}
-
 album_t * Album_API::object_from_json(const std::string &json_string)
 {
 	album_t *output;
@@ -110,7 +91,7 @@ album_t * Album_API::object_from_json(const std::string &json_string)
 			output->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
 		}
 
-		output->tracks = json_object.contains("tracks") ? parse_tracks(json_object["tracks"]) : page_t<struct track_t *>();
+		output->tracks = json_object.contains("tracks") ? *page_t<track_t *>::object_from_json(json_object["tracks"], Track_API::object_from_json) : page_t<track_t *>();
 	}
 	catch (const std::exception &e)
 	{
@@ -202,9 +183,7 @@ page_t<track_t *> Album_API::get_album_tracks(const std::string &album_id, uint3
 
 	for (auto track = json_object["items"].begin(); track != json_object["items"].end(); ++track)
 	{
-		track_t * temp_track;
-		Track_API::object_from_json(track.value().dump(), temp_track);
-		retval.items.push_back(temp_track);
+		retval.items.push_back(Track_API::object_from_json(track.value().dump()));
 	}
 	retval.items.shrink_to_fit();
 

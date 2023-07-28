@@ -40,7 +40,7 @@ namespace spotify_api
 		uint8_t popularity;
 		std::string label;
 		std::vector<artist_t *> artists;
-		page_t<struct track_t *> tracks;
+		page_t<track_t *> tracks;
 	} album_t;
 
 	class Album_API
