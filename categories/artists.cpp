@@ -140,9 +140,8 @@ std::vector<track_t *> Artist_API::get_artist_top_tracks(const std::string &arti
 	json::json tracks_array = json::json::parse(response.body)["tracks"];
 	for (auto track = tracks_array.begin(); track != tracks_array.end(); ++track)
 	{
-		track_t *temp_track;
-		Track_API::object_from_json(track.value().dump(), temp_track);
-		tracks.push_back(temp_track);
+		tracks.push_back(Track_API::object_from_json(track.value().dump()));
+		
 	}
 	return tracks;
 }
