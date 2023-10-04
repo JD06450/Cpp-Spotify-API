@@ -8,9 +8,9 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-album_t * Album_API::object_from_json(const std::string &json_string)
+std::unique_ptr<album_t> Album_API::object_from_json(const std::string &json_string)
 {
-	album_t *output;
+	std::unique_ptr<album_t> album = std::make_unique<album_t>();
 	// using a single "temp" variable to save on memory space.
 	// why initialize a bunch of big stack variables when you could just use 1
 
@@ -19,79 +19,79 @@ album_t * Album_API::object_from_json(const std::string &json_string)
 	{
 		json::json json_object = json::json::parse(json_string);
 
-		output->album_type = json_object["album_type"];
-		output->total_tracks = json_object["total_tracks"];
+		album->album_type = json_object["album_type"];
+		album->total_tracks = json_object["total_tracks"];
 
 		temp = json_object["available_markets"];
-		output->available_markets.reserve(temp.size());
+		album->available_markets.reserve(temp.size());
 		for (auto market = temp.begin(); market != temp.end(); ++market)
 		{
-			output->available_markets.push_back(market.value());
+			album->available_markets.push_back(market.value());
 		}
-		output->available_markets.shrink_to_fit();
+		album->available_markets.shrink_to_fit();
 
 		temp = json_object["external_urls"];
 		for (auto ext_url = temp.begin(); ext_url != temp.end(); ++ext_url)
 		{
-			output->external_urls.emplace(ext_url.key(), ext_url.value().get<std::string>());
+			album->external_urls.emplace(ext_url.key(), ext_url.value().get<std::string>());
 		}
 
-		output->href = json_object["href"];
-		output->id = json_object["id"];
+		album->href = json_object["href"];
+		album->id = json_object["id"];
 
 		temp = json_object["images"];
-		output->images.reserve(temp.size());
+		album->images.reserve(temp.size());
 		for (auto image = temp.begin(); image != temp.end(); ++image)
 		{
 			image_t temp_image;
 			spotify_api::object_from_json(image.value().dump(), &temp_image);
-			output->images.push_back(temp_image);
+			album->images.push_back(temp_image);
 		}
-		output->images.shrink_to_fit();
+		album->images.shrink_to_fit();
 
-		output->name = json_object["name"];
-		output->release_date = json_object["release_date"];
-		output->release_date_precision = json_object["release_date_precision"];
+		album->name = json_object["name"];
+		album->release_date = json_object["release_date"];
+		album->release_date_precision = json_object["release_date_precision"];
 
 		
 		temp = json_object.value("restrictions", json::json::object());
 		for (auto item = temp.begin(); item != temp.end(); ++item)
 		{
-			output->restrictions.emplace(item.key(), item.value().get<std::string>());
+			album->restrictions.emplace(item.key(), item.value().get<std::string>());
 		}
 
 		temp = json_object.value("copyrights", json::json::array());
 		for (auto cp = temp.begin(); cp != temp.end(); ++cp)
 		{
-			output->copyrights.push_back((copyright_t) {cp.value()["text"].get<std::string>(), cp.value()["type"].get<std::string>()});
+			album->copyrights.push_back((copyright_t) {cp.value()["text"].get<std::string>(), cp.value()["type"].get<std::string>()});
 		}
-		output->copyrights.shrink_to_fit();
+		album->copyrights.shrink_to_fit();
 
-		output->uri = json_object["uri"];
+		album->uri = json_object["uri"];
 
 		temp = json_object.value("external_ids", json::json::object());
 		for (auto id = temp.begin(); id != temp.end(); ++id)
 		{
-			output->restrictions.emplace(id.key(), id.value().get<std::string>());
+			album->restrictions.emplace(id.key(), id.value().get<std::string>());
 		}
 
 		temp = json_object["genres"];
 		for (auto genre = temp.begin(); genre != temp.end(); ++genre)
 		{
-			output->genres.push_back(genre.value());
+			album->genres.push_back(genre.value());
 		}
 
-		output->popularity = json_object.value("popularity", 0);
+		album->popularity = json_object.value("popularity", 0);
 
-		output->label = json_object.value("artists", "");
+		album->label = json_object.value("artists", "");
 
 		temp = json_object.value("artists", json::json::array());
 		for (auto artist = temp.begin(); artist != temp.end(); ++artist)
 		{
-			output->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
+			album->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
 		}
 
-		output->tracks = json_object.contains("tracks") ? *page_t<track_t *>::object_from_json(json_object["tracks"], Track_API::object_from_json) : page_t<track_t *>();
+		album->tracks = json_object.contains("tracks") ? *page_t<track_t *>::object_from_json(json_object["tracks"], Track_API::object_from_json) : page_t<track_t *>();
 	}
 	catch (const std::exception &e)
 	{
@@ -101,11 +101,12 @@ album_t * Album_API::object_from_json(const std::string &json_string)
 		// TODO: idk if this try-catch is necessary, but i guess it would be nice to have
 		// if someone gives us junk data. maybe return as much useful data as we can collect
 		// instead of returning an empty object? ¯\_(ツ)_/¯
-		return new album_t();
+		return std::make_unique<album_t>();
 	}
+	return album;
 }
 
-album_t *Album_API::get_album(const std::string &album_id)
+std::unique_ptr<album_t> Album_API::get_album(const std::string &album_id)
 {
 	std::string url = API_PREFIX "/albums/";
 	url += album_id;
@@ -117,9 +118,9 @@ album_t *Album_API::get_album(const std::string &album_id)
 	}
 }
 
-std::vector<album_t *> Album_API::get_albums(const std::vector<std::string> &album_ids)
+std::vector<std::unique_ptr<album_t>> Album_API::get_albums(const std::vector<std::string> &album_ids)
 {
-	std::vector<album_t *> albums;
+	std::vector<std::unique_ptr<album_t>> albums;
 	albums.reserve(album_ids.size());
 	std::string query_string = "";
 	size_t num_batches = ceil(album_ids.size() / 20);
@@ -154,7 +155,7 @@ std::vector<album_t *> Album_API::get_albums(const std::vector<std::string> &alb
 	return albums;
 }
 
-page_t<track_t *> Album_API::get_album_tracks(const std::string &album_id, uint32_t limit, uint32_t offset, const std::string &market)
+page_t<std::unique_ptr<track_t>> Album_API::get_album_tracks(const std::string &album_id, uint32_t limit, uint32_t offset, const std::string &market)
 {
 	std::string trunc_album_id = truncate_id(album_id);
 
@@ -168,7 +169,7 @@ page_t<track_t *> Album_API::get_album_tracks(const std::string &album_id, uint3
 
 	json::json json_object = json::json::parse(response.body);
 
-	page_t<track_t *> retval {};
+	page_t<std::unique_ptr<track_t>> retval;
 
 	if (response.code != 200) {
 		return retval;
@@ -190,35 +191,16 @@ page_t<track_t *> Album_API::get_album_tracks(const std::string &album_id, uint3
 	return retval;
 }
 
-page_t<album_t *> Album_API::get_users_albums(uint32_t limit, uint32_t offset, const std::string &market)
+page_t<std::unique_ptr<album_t>> Album_API::get_users_albums(uint32_t limit, uint32_t offset, const std::string &market)
 {
 	std::ostringstream query_data;
 	query_data << "limit=" << limit << "&offset=" << offset << "&market=" << market;
-
 	auto response = http::get(API_PREFIX "/me/albums", query_data.str(), this->access_token);
 
-	json::json json_object = json::json::parse(response.body);
-
-	page_t<album_t *> retval {};
-
 	if (response.code != 200) {
-		return retval;
+		return page_t<std::unique_ptr<album_t>>();
 	}
-
-	retval.href = json_object["href"];
-	retval.limit = json_object["limit"];
-	retval.next = json_object.value("next", "");
-	retval.previous = json_object.value("previous", "");
-	retval.offset = json_object["offset"];
-	retval.total = json_object["total"];
-
-	for (auto album = json_object["items"].begin(); album != json_object["items"].end(); ++album)
-	{
-		retval.items.push_back(object_from_json(album.value()["album"].dump()));
-	}
-	retval.items.shrink_to_fit();
-
-	return retval;
+	return std::move(*page_t<std::unique_ptr<album_t>>::object_from_json(response.body, object_from_json));
 }
 
 void Album_API::save_albums_for_current_user(const std::vector<std::string> &album_ids)
@@ -299,7 +281,7 @@ std::vector<bool> Album_API::check_users_saved_albums(const std::vector<std::str
 	return contains_vector;
 }
 
-page_t<album_t *> Album_API::get_new_releases(uint32_t limit, uint32_t offset, const std::string &country)
+page_t<std::unique_ptr<album_t>> Album_API::get_new_releases(uint32_t limit, uint32_t offset, const std::string &country)
 {
 	std::ostringstream query_data;
 	query_data << "limit=" << limit << "&offset=" << offset << "&country=" << country;
@@ -308,7 +290,7 @@ page_t<album_t *> Album_API::get_new_releases(uint32_t limit, uint32_t offset, c
 
 	json::json json_object = json::json::parse(response.body)["albums"];
 
-	page_t<album_t *> new_releases {};
+	page_t<std::unique_ptr<album_t>> new_releases;
 
 	if (response.code != 200) {
 		return new_releases;

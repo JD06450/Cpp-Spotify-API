@@ -7,6 +7,7 @@
 #include <map>
 #include <regex>
 #include <cstdint>
+#include <memory>
 
 #include "artists.hpp"
 #include "tracks.hpp"
@@ -56,7 +57,7 @@ namespace spotify_api
 		 * @param json_string The stringified JSON object to convert
 		 * @returns A pointer to a newly created album object
 		*/
-		static album_t * object_from_json(const std::string &json_string);
+		static std::unique_ptr<album_t> object_from_json(const std::string &json_string);
 
 		/**
 		 * @brief Retrieves the information of an album from Spotify using an album ID.
@@ -65,7 +66,7 @@ namespace spotify_api
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-an-album
 		 * @returns A new album object
 		 */
-		album_t * get_album(const std::string &album_id);
+		std::unique_ptr<album_t> get_album(const std::string &album_id);
 		
 		/**
 		 * @brief Retrieves info on multiple albums from Spotify using their IDs.
@@ -74,7 +75,7 @@ namespace spotify_api
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-multiple-albums
 		 * @returns A vector containing pointers to new album objects
 		*/
-		std::vector<album_t *> get_albums(const std::vector<std::string> &album_ids);
+		std::vector<std::unique_ptr<album_t>> get_albums(const std::vector<std::string> &album_ids);
 
 		/**
 		 * @brief Gets the tracks associated with an album using its ID.
@@ -87,7 +88,7 @@ namespace spotify_api
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-an-albums-tracks
 		 * @returns The cataloged info of each track in the album
 		 */
-		page_t<track_t *> get_album_tracks(const std::string &album_id, uint32_t limit = 20, uint32_t offset = 0, const std::string &market = "");
+		page_t<std::unique_ptr<track_t>> get_album_tracks(const std::string &album_id, uint32_t limit = 20, uint32_t offset = 0, const std::string &market = "");
 
 		/**
 		 * @brief Retrieves a list of albums that a user has saved in their "Your Music" library.
@@ -99,7 +100,7 @@ namespace spotify_api
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-users-saved-albums
 		 * @returns The list of albums that the user has saved
 		*/
-		page_t<album_t *> get_users_albums(uint32_t limit = 20, uint32_t offset = 0, const std::string &market = "");
+		page_t<std::unique_ptr<album_t>> get_users_albums(uint32_t limit = 20, uint32_t offset = 0, const std::string &market = "");
 
 		/**
 		 * @brief Saves a list of albums to the user's library.
@@ -137,7 +138,7 @@ namespace spotify_api
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-new-releases
 		 * @returns A list containing information about the new albums
 		 */
-		page_t<album_t *> get_new_releases(uint32_t limit = 20, uint32_t offset = 0, const std::string &country = "");
+		page_t<std::unique_ptr<album_t>> get_new_releases(uint32_t limit = 20, uint32_t offset = 0, const std::string &country = "");
 	};
 
 } // namespace spotify_api

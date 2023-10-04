@@ -6,6 +6,7 @@
 #include <vector>
 #include <optional>
 #include <cmath>
+#include <memory>
 
 #include "albums.hpp"
 #include "artists.hpp"
@@ -26,7 +27,7 @@ namespace spotify_api
 		std::string href;
 		std::string id;
 		bool is_playable;
-		std::optional<track_t *> linked_from;
+		std::optional<std::unique_ptr<track_t>> linked_from;
 		std::map<std::string, std::string> restrictions;
 		std::string name;
 		int popularity;
@@ -100,7 +101,7 @@ namespace spotify_api
 			std::string rhythm_version;
 		} track_t;
 
-		track_t * parse_analysis_track(const std::string &track_string);
+		std::unique_ptr<track_t> parse_analysis_track(const std::string &track_string);
 
 		typedef struct {
 			double start;
@@ -180,13 +181,13 @@ namespace spotify_api
 		std::string access_token;
 		Track_API(std::string access_token): access_token(access_token) {}
 		
-		static track_t * object_from_json(const std::string &json_string);
+		static std::unique_ptr<track_t> object_from_json(const std::string &json_string);
 		
-		track_t * get_track(const std::string &track_id, const std::string &market);
+		std::unique_ptr<track_t> get_track(const std::string &track_id, const std::string &market);
 
-		std::vector<track_t *> get_tracks(const std::vector<std::string> &track_ids, const std::string &market);
+		std::vector<std::unique_ptr<track_t>> get_tracks(const std::vector<std::string> &track_ids, const std::string &market);
 
-		page_t<track_t *> get_saved_tracks(const std::string &market, uint8_t limit, unsigned int offset);
+		page_t<std::unique_ptr<track_t>> get_saved_tracks(const std::string &market, uint8_t limit, unsigned int offset);
 
 		void save_tracks(const std::vector<std::string> &track_ids);
 
@@ -194,11 +195,11 @@ namespace spotify_api
 
 		std::vector<bool> check_saved_tracks(const std::vector<std::string> &track_ids);
 
-		audio_features_t * get_audio_features_for_track(const std::string &track_id);
+		std::unique_ptr<audio_features_t> get_audio_features_for_track(const std::string &track_id);
 
-		std::vector<audio_features_t *> get_audio_features_for_tracks(const std::vector<std::string> &track_ids);
+		std::vector<std::unique_ptr<audio_features_t>> get_audio_features_for_tracks(const std::vector<std::string> &track_ids);
 
-		audio_analysis_t * get_audio_analysis_for_track(const std::string &track_id);
+		std::unique_ptr<audio_analysis_t> get_audio_analysis_for_track(const std::string &track_id);
 		
 		typedef struct {
 			unsigned int after_filtering_size;
@@ -293,7 +294,7 @@ namespace spotify_api
 			
 		} recommendation_filter_t;
 
-		std::pair<std::vector<recommendation_seed_t>, std::vector<track_t *>> * get_recommendations(const recommendation_filter_t &filter);
+		std::pair<std::vector<recommendation_seed_t>, std::vector<std::unique_ptr<track_t>>> get_recommendations(const recommendation_filter_t &filter);
 	};
 } // namespace spotify_api
 

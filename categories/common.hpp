@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace spotify_api
 {
@@ -45,7 +46,7 @@ namespace spotify_api
 		std::string previous = "";
 		int total = 0;
 
-		static page_t<Item_Type> * object_from_json(const std::string &json_string, Item_Type (*item_func)(const std::string &));
+		static std::unique_ptr<page_t<Item_Type>> object_from_json(const std::string &json_string, Item_Type (*item_func)(const std::string &));
 	};
 
 	std::string truncate_id(const std::string &full_id);
