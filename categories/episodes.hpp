@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <memory>
 
 #include "common.hpp"
 #include "shows.hpp"
@@ -60,6 +61,8 @@ namespace spotify_api
 		std::string restrictions;
 		// The show that the episode belongs to
 		show_t *show;
+		
+		static std::unique_ptr<episode_t> from_json(const std::string &json_string);
 	};
 	
 	class Episode_API
@@ -67,7 +70,6 @@ namespace spotify_api
 		public:
 		std::string access_token;
 		Episode_API(std::string access_token): access_token(access_token) {}
-		static episode_t * object_from_json(const std::string &json_string);
 	};
 	
 } // namespace spotify_api

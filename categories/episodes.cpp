@@ -6,8 +6,10 @@ namespace json = nlohmann;
 
 namespace spotify_api
 {
-	void Episode_API::object_from_json(const std::string &json_string, episode_t *output)
+	std::unique_ptr<episode_t> episode_t::from_json(const std::string &json_string)
 	{
+		auto output = std::make_unique<episode_t>();
+
 		json::json json_object = json::json::parse(json_string);
 
 		if (!json_object["audio_preview_url"].is_null()) {

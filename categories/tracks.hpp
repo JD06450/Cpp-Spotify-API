@@ -14,10 +14,10 @@
 
 namespace spotify_api
 {
-	typedef struct track_t
+	struct track_t
 	{
-		album_t *album;
-		std::vector<artist_t *> artists;
+		std::unique_ptr<album_t> album;
+		std::vector<std::unique_ptr<artist_t>> artists;
 		std::vector<std::string> available_markets;
 		int disc_number;
 		int duration_ms;
@@ -36,9 +36,11 @@ namespace spotify_api
 		const std::string type = "track";
 		std::string uri;
 		bool is_local;
+
+		static std::unique_ptr<track_t> from_json(const std::string &json_string);
 	};
 
-	typedef struct {
+	struct audio_features_t {
 		double acousticness;
 		std::string analysis_url;
 		double danceability;
@@ -57,10 +59,12 @@ namespace spotify_api
 		const std::string type = "audio_features";
 		std::string uri;
 		double valence;
-	} audio_features_t;
+	};
 
-	typedef struct {
-		typedef struct {
+	struct audio_analysis_t
+	{
+		struct meta_t
+		{
 			std::string analyzer_version;
 			std::string platform;
 			std::string detailed_status;
@@ -68,11 +72,12 @@ namespace spotify_api
 			uint64_t timestamp;
 			double analysis_time;
 			std::string input_process;
-		} meta_t;
+			
+			static std::unique_ptr<meta_t> from_json(const std::string &json_string);
+		};
 
-		meta_t * parse_analysis_meta(const std::string &meta_string);
-
-		typedef struct {
+		struct track_t
+		{
 			uint64_t samples;
 			double duration;
 			std::string sample_md5; // Always empty
@@ -99,29 +104,35 @@ namespace spotify_api
 			std::string synch_version;
 			std::string rhythmstring;
 			std::string rhythm_version;
-		} track_t;
+			
+			static std::unique_ptr<track_t> from_json(const std::string &json_string);
+		};
 
-		std::unique_ptr<track_t> parse_analysis_track(const std::string &track_string);
 
-		typedef struct {
+		struct bar_t
+		{
 			double start;
 			double duration;
 			double confidence;
-		} bar_t;
 
-		bar_t * parse_analysis_bar(const std::string &bar_string);
-		std::vector<bar_t *> parse_analysis_bars(const std::string &bar_strings);
+			static std::unique_ptr<bar_t> from_json(const std::string &json_string);
+			// static std::vector<std::unique_ptr<bar_t>> parse_analysis_bars(const std::string &json_string);
+		};
 
-		typedef struct {
+
+		struct beat_t
+		{
 			double start;
 			double duration;
 			double confidence;
-		} beat_t;
+		
+			static std::unique_ptr<beat_t> from_json(const std::string &json_string);
+			// static std::vector<std::unique_ptr<beat_t>> parse_analysis_beats(const std::string &json_string);
+		};
 
-		beat_t * parse_analysis_beat(const std::string &beat_string);
-		std::vector<beat_t *> parse_analysis_beats(const std::string &beat_strings);
 
-		typedef struct {
+		struct section_t
+		{
 			double start;
 			double duration;
 			double confidence;
@@ -134,12 +145,14 @@ namespace spotify_api
 			double mode_confidence;
 			int time_signature;
 			double time_signature_confidence;
-		} section_t;
+		
+			static std::unique_ptr<section_t> from_json(const std::string &json_string);
+			// static std::vector<std::unique_ptr<section_t>> parse_analysis_sections(const std::string &json_string);
+		};
 
-		section_t * parse_analysis_section(const std::string &section_string);
-		std::vector<section_t *> parse_analysis_sections(const std::string &section_strings);
 
-		typedef struct {
+		struct segment_t
+		{
 			double start;
 			double duration;
 			double confidence;
@@ -149,19 +162,22 @@ namespace spotify_api
 			double loudness_end;
 			std::vector<int> pitches;
 			std::vector<int> timbre;
-		} segment_t;
+			
+			static std::unique_ptr<segment_t> from_json(const std::string &json_string);
+			// static std::vector<std::unique_ptr<segment_t>> parse_analysis_segments(const std::string &json_string);
+		};
 
-		segment_t * parse_analysis_segment(const std::string &segment_string);
-		std::vector<segment_t *> parse_analysis_segments(const std::string &segment_strings);
 
-		typedef struct {
+		struct tatum_t
+		{
 			double start;
 			double duration;
 			double confidence;
-		} tatum_t;
+			
+			static std::unique_ptr<tatum_t> from_json(const std::string &tatum_string);
+			// static std::vector<std::unique_ptr<tatum_t>> parse_analysis_tatums(const std::string &tatum_strings);
+		};
 
-		tatum_t * parse_analysis_tatum(const std::string &tatum_string);
-		std::vector<tatum_t *> parse_analysis_tatums(const std::string &tatum_strings);
 
 		meta_t meta;
 		track_t track;
@@ -171,17 +187,15 @@ namespace spotify_api
 		std::vector<segment_t> segments;
 		std::vector<tatum_t> tatums;
 
-	} audio_analysis_t;
+		static std::unique_ptr<audio_analysis_t> from_json(const std::string &json_string);
+	};
 
-	audio_analysis_t * parse_audio_analysis(const std::string &analysis_string);
 
 	class Track_API
 	{
 		public:
 		std::string access_token;
 		Track_API(std::string access_token): access_token(access_token) {}
-		
-		static std::unique_ptr<track_t> object_from_json(const std::string &json_string);
 		
 		std::unique_ptr<track_t> get_track(const std::string &track_id, const std::string &market);
 
@@ -201,18 +215,20 @@ namespace spotify_api
 
 		std::unique_ptr<audio_analysis_t> get_audio_analysis_for_track(const std::string &track_id);
 		
-		typedef struct {
+		struct recommendation_seed_t
+		{
 			unsigned int after_filtering_size;
 			unsigned int after_relinking_size;
 			std::string href;
 			std::string id;
 			unsigned int initial_pool_size;
-		} recommendation_seed_t;
+		};
 
 		// This is a lot of filters
 		// Using std::nan as defualt value to tell that the property is unused
 
-		typedef struct {
+		struct recommendation_filter_t
+		{
 			unsigned int limit;
 			std::string market;
 			std::vector<std::string> seed_artists;
@@ -291,10 +307,13 @@ namespace spotify_api
 			double max_valence = std::nan("");
 			// Range: 0.0 - 1.0
 			double target_valence = std::nan("");
-			
-		} recommendation_filter_t;
+		};
 
-		std::pair<std::vector<recommendation_seed_t>, std::vector<std::unique_ptr<track_t>>> get_recommendations(const recommendation_filter_t &filter);
+		// I wish this type could be shorter. :(
+
+		using recommendations_t = std::pair<std::vector<recommendation_seed_t>, std::vector<std::unique_ptr<track_t>>>;
+
+		std::unique_ptr<recommendations_t> get_recommendations(const recommendation_filter_t &filter);
 	};
 } // namespace spotify_api
 

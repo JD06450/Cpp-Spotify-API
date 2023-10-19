@@ -15,12 +15,12 @@
 
 namespace spotify_api
 {
-	typedef struct {
+	struct copyright_t {
 		std::string text;
 		std::string type;
-	} copyright_t;
+	};
 
-	typedef struct
+	struct album_t
 	{
 		std::string album_type;
 		unsigned int total_tracks;
@@ -40,24 +40,24 @@ namespace spotify_api
 		std::vector<std::string> genres;
 		uint8_t popularity;
 		std::string label;
-		std::vector<artist_t *> artists;
-		page_t<track_t *> tracks;
-	} album_t;
+		std::vector<std::unique_ptr<artist_t>> artists;
+		page_t<std::unique_ptr<track_t>> tracks;
+		
+		/**
+		 * @brief Converts a stringified JSON object to an album object.
+		 * @param json_string The stringified JSON object to convert. The expected format of the json object
+		 * can be found [here](https://developer.spotify.com/documentation/web-api/reference/get-an-album)
+		 * @returns A pointer to a newly created album object
+		*/
+		static std::unique_ptr<album_t> from_json(const std::string &json_string);
+	};
 
 	class Album_API
 	{
-
 		public:
 		std::string access_token;	
 
 		Album_API(std::string access_token): access_token(access_token) {}
-
-		/**
-		 * @brief Converts a stringified JSON object to an album object.
-		 * @param json_string The stringified JSON object to convert
-		 * @returns A pointer to a newly created album object
-		*/
-		static std::unique_ptr<album_t> object_from_json(const std::string &json_string);
 
 		/**
 		 * @brief Retrieves the information of an album from Spotify using an album ID.

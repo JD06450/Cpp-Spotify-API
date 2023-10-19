@@ -3,6 +3,8 @@
 #define _SPOTIFY_API_PLAYER_
 
 #include <string>
+#include <variant>
+#include <type_traits>
 
 #include "tracks.hpp"
 #include "episodes.hpp"
@@ -24,7 +26,7 @@ namespace spotify_api
 		int volume_percent;
 		
 	} playback_device_t;
-	playback_device_t * parse_playback_device(const std::string &json_string);
+	std::unique_ptr<playback_device_t> parse_playback_device(const std::string &json_string);
 
 	struct context_t
 	{
@@ -33,7 +35,7 @@ namespace spotify_api
 		std::map<std::string, std::string> external_urls;
 		std::string uri;
 	};
-	context_t * parse_player_context(const std::string &json_string);
+	std::unique_ptr<context_t> parse_player_context(const std::string &json_string);
 
 	// According to the spotify api docs, all of these options are technically "optional" in an api response,
 	// but if any option is not present, then it shall be defaulted to false
@@ -51,7 +53,7 @@ namespace spotify_api
 		bool toggling_repeat_track;
 		bool transfer_playback;
 	} context_actions_t;
-	context_actions_t * parse_context_actions(const std::string &json_string);
+	std::unique_ptr<context_actions_t> parse_context_actions(const std::string &json_string);
 
 	typedef struct
 	{
@@ -64,55 +66,69 @@ namespace spotify_api
 		int progress_ms;
 		bool is_playing;
 
-		track_t *item;
+		std::unique_ptr<track_t> item;
 
 		std::string currently_playing_type;
 		// A list of actions that can be performed and whether or not that action is allowed within the current context
 		context_actions_t actions;
 	} playback_state_t;
-	playback_state_t * parse_playback_state(const std::string &json_string);
+	std::unique_ptr<playback_state_t> parse_playback_state(const std::string &json_string);
 
-	typedef struct
+	template <typename T, typename = void>
+	struct HasFromJson : std::false_type {};
+
+	template <typename T>
+	struct HasFromJson<T, std::void_t<decltype(T::from_json())>> : std::true_type {};
+
+	// template <typename Item_Type>
+	struct queue_t
 	{
+		// static_assert(std::is_function<decltype(Item_Type::from_json)>::value, "Invalid Type");
 		/**
 		 * @brief specifies the type of items that are present in the queue. Currently only the values "track" and "episode" are allowed.
 		*/
 		std::string type;
-		std::optional<track_t *> current_track;
-		std::optional<episode_t *> current_episode;
-		std::optional<std::vector<track_t *>> tracks;
-		std::optional<std::vector<episode_t *>> episodes;
-	} queue_t;
-	queue_t * parse_queue(const std::string &json_string);
+		// std::optional<std::unique_ptr<T>> current_item;
+		std::optional<std::unique_ptr<track_t>> current_track;
+		std::optional<std::unique_ptr<episode_t>> current_episode;
+		// std::optional<std::vector<std::unique_ptr<T>>> items;
+		std::optional<std::vector<std::unique_ptr<track_t>>> tracks;
+		std::optional<std::vector<std::unique_ptr<episode_t>>> episodes;
 
-	typedef struct {
-		track_t * track;
+		static std::unique_ptr<queue_t> from_json(const std::string &json_string);
+	};
+	// std::unique_ptr<queue_t<track_t>> parse_queue(const std::string &json_string);
+
+	struct track_history_t {
+		std::unique_ptr<track_t> track;
 		std::string played_at;
 		context_t context;
-	} track_history_t;
+	};
 
-	typedef struct {
-		std::string href;
-		int limit;
-		std::string next;
-		
-		typedef struct
+	struct recent_tracks_t
+	{
+	private:
+		struct cursor_t
 		{
 			int before;
 			int after;
-		} cursor_t;
-
+		};
+		
+	public:
+		std::string href;
+		int limit;
+		int total;
+		std::string next;
+		std::vector<track_history_t> items;
+		
 		cursor_t cursor;
 		
-		int total;
-		std::vector<track_history_t> items;
-	} recent_tracks_t;
-
-	recent_tracks_t * parse_recent_tracks(const std::string &json_string);
+		static std::unique_ptr<recent_tracks_t> from_json(const std::string &json_string);
+	};
 		
 	class Player_API
 	{
-		public:
+	public:
 		std::string access_token;
 		Player_API(std::string access_token): access_token(access_token) {}
 
@@ -121,7 +137,7 @@ namespace spotify_api
 		* @note Endpoint: /me/player
 		* @note Docs: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-information-about-the-users-current-playback
 		*/
-		playback_state_t *get_playback_state();
+		std::unique_ptr<playback_state_t> get_playback_state();
 		
 		/*
 		* Usage: Transfers media playback to another device
@@ -147,7 +163,7 @@ namespace spotify_api
 		* Parameters: none
 		* Documentation: https://developer.spotify.com/documentation/web-api/reference/#/operations/get-the-users-currently-playing-track
 		*/
-		track_t *get_currently_playing_track();
+		std::unique_ptr<track_t> get_currently_playing_track();
 		
 		/*
 		* Usage: Start a new context or resume current playback on the user's active device.
@@ -202,13 +218,9 @@ namespace spotify_api
 		{
 			http::api_response response = http::post(API_PREFIX "/me/player/next", std::string(""), access_token, true);
 			if (response.code == 204)
-			{
 				return true;
-			}
 			else
-			{
 				return false;
-			}
 		}
 
 		/*
@@ -267,7 +279,7 @@ namespace spotify_api
 		 * @note Endpoint: /me/player/recently-player
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-recently-played
 		*/
-		recent_tracks_t * get_recently_played_tracks(int limit, unsigned int timestamp, bool after);
+		std::unique_ptr<recent_tracks_t> get_recently_played_tracks(int limit, unsigned int timestamp, bool after);
 
 		/**
 		 * @brief Get all items currently in the user's queue
@@ -275,7 +287,7 @@ namespace spotify_api
 		 * @note Endpoint: /me/player/queue
 		 * @note Docs: https://developer.spotify.com/documentation/web-api/reference/get-queue
 		*/
-		queue_t * get_queue();
+		std::unique_ptr<queue_t> get_queue();
 
 		/**
 		 * @brief Adds the specified item to the user's playback queue
@@ -290,7 +302,7 @@ namespace spotify_api
 		 * @param q The search query
 		 * @returns The track that best matches the query
 		*/
-		track_t * search_for_track(const std::string &q);
+		std::unique_ptr<track_t> search_for_track(const std::string &q);
 		//TODO: support for all item types
 	};
 

@@ -6,13 +6,13 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-std::string truncate_id(const std::string &full_id)
+std::string truncate_spotify_uri(const std::string &full_id)
 {
 	size_t id_start = full_id.find_last_of(':');
 	return id_start != std::string::npos ? full_id.substr(id_start + 1) : full_id;
 }
 
-std::vector<std::string> truncate_ids(const std::vector<std::string> &full_ids, size_t limit)
+std::vector<std::string> truncate_spotify_uris(const std::vector<std::string> &full_ids, size_t limit)
 {
 	std::vector<std::string> truncated_ids;
 
@@ -30,9 +30,9 @@ std::vector<std::string> truncate_ids(const std::vector<std::string> &full_ids, 
 }
 
 template <typename Item_Type>
-page_t<Item_Type> * page_t<Item_Type>::object_from_json(const std::string &json_string, Item_Type (*item_func)(const std::string &))
+page_t<Item_Type> page_t<Item_Type>::from_json(const std::string &json_string, Item_Type (*item_func)(const std::string &))
 {
-	page_t<Item_Type> * new_page;
+	page_t<Item_Type> new_page;
 
 	json::json json_object = json::json::parse(json_string);
 

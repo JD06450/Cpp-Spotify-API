@@ -8,9 +8,10 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-std::unique_ptr<album_t> Album_API::object_from_json(const std::string &json_string)
+std::unique_ptr<album_t> album_t::from_json(const std::string &json_string)
 {
-	std::unique_ptr<album_t> album = std::make_unique<album_t>();
+	auto album = std::make_unique<album_t>();
+
 	// using a single "temp" variable to save on memory space.
 	// why initialize a bunch of big stack variables when you could just use 1
 
@@ -43,9 +44,7 @@ std::unique_ptr<album_t> Album_API::object_from_json(const std::string &json_str
 		album->images.reserve(temp.size());
 		for (auto image = temp.begin(); image != temp.end(); ++image)
 		{
-			image_t temp_image;
-			spotify_api::object_from_json(image.value().dump(), &temp_image);
-			album->images.push_back(temp_image);
+			album->images.push_back(image_t::from_json(image.value().dump()));
 		}
 		album->images.shrink_to_fit();
 
@@ -88,10 +87,12 @@ std::unique_ptr<album_t> Album_API::object_from_json(const std::string &json_str
 		temp = json_object.value("artists", json::json::array());
 		for (auto artist = temp.begin(); artist != temp.end(); ++artist)
 		{
-			album->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
+			album->artists.push_back(artist_t::from_json(artist.value().dump()));
 		}
 
-		album->tracks = json_object.contains("tracks") ? *page_t<track_t *>::object_from_json(json_object["tracks"], Track_API::object_from_json) : page_t<track_t *>();
+		album->tracks = json_object.contains("tracks")
+			? page_t<std::unique_ptr<track_t>>::from_json(json_object["tracks"], track_t::from_json)
+			: page_t<std::unique_ptr<track_t>>();
 	}
 	catch (const std::exception &e)
 	{
@@ -114,7 +115,7 @@ std::unique_ptr<album_t> Album_API::get_album(const std::string &album_id)
 	http::api_response response = http::get(url.c_str(), std::string(""), this->access_token);
 	if (response.code == 200)
 	{
-		return object_from_json(response.body);
+		return album_t::from_json(response.body);
 	}
 }
 
@@ -148,7 +149,7 @@ std::vector<std::unique_ptr<album_t>> Album_API::get_albums(const std::vector<st
 		json::json page_json = json::json::parse(page)["albums"];
 		for (auto album = page_json.begin(); album != page_json.end(); ++album)
 		{
-			albums.push_back(object_from_json(album.value().dump()));
+			albums.push_back(album_t::from_json(album.value().dump()));
 		}
 	}
 	albums.shrink_to_fit();
@@ -157,7 +158,7 @@ std::vector<std::unique_ptr<album_t>> Album_API::get_albums(const std::vector<st
 
 page_t<std::unique_ptr<track_t>> Album_API::get_album_tracks(const std::string &album_id, uint32_t limit, uint32_t offset, const std::string &market)
 {
-	std::string trunc_album_id = truncate_id(album_id);
+	std::string trunc_album_id = truncate_spotify_uri(album_id);
 
 	std::ostringstream url, query_data;
 	url << API_PREFIX << "/albums/" << trunc_album_id << "/tracks";
@@ -184,7 +185,7 @@ page_t<std::unique_ptr<track_t>> Album_API::get_album_tracks(const std::string &
 
 	for (auto track = json_object["items"].begin(); track != json_object["items"].end(); ++track)
 	{
-		retval.items.push_back(Track_API::object_from_json(track.value().dump()));
+		retval.items.push_back(track_t::from_json(track.value().dump()));
 	}
 	retval.items.shrink_to_fit();
 
@@ -200,12 +201,12 @@ page_t<std::unique_ptr<album_t>> Album_API::get_users_albums(uint32_t limit, uin
 	if (response.code != 200) {
 		return page_t<std::unique_ptr<album_t>>();
 	}
-	return std::move(*page_t<std::unique_ptr<album_t>>::object_from_json(response.body, object_from_json));
+	return std::move(page_t<std::unique_ptr<album_t>>::from_json(response.body, album_t::from_json));
 }
 
 void Album_API::save_albums_for_current_user(const std::vector<std::string> &album_ids)
 {
-	std::vector<std::string> truncated_ids = truncate_ids(album_ids, 20);
+	std::vector<std::string> truncated_ids = truncate_spotify_uris(album_ids, 20);
 
 	std::ostringstream query_data;
 	query_data << "?ids=";
@@ -226,7 +227,7 @@ void Album_API::save_albums_for_current_user(const std::vector<std::string> &alb
 
 void Album_API::remove_saved_albums_for_current_user(const std::vector<std::string> &album_ids)
 {
-	std::vector<std::string> truncated_ids = truncate_ids(album_ids, 20);
+	std::vector<std::string> truncated_ids = truncate_spotify_uris(album_ids, 20);
 
 	std::ostringstream query_data;
 	query_data << "?ids=";
@@ -247,7 +248,7 @@ void Album_API::remove_saved_albums_for_current_user(const std::vector<std::stri
 
 std::vector<bool> Album_API::check_users_saved_albums(const std::vector<std::string> &album_ids)
 {
-	std::vector<std::string> truncated_ids = truncate_ids(album_ids, 20);
+	std::vector<std::string> truncated_ids = truncate_spotify_uris(album_ids, 20);
 
 	std::ostringstream query_data;
 	query_data << "ids=";
@@ -305,7 +306,7 @@ page_t<std::unique_ptr<album_t>> Album_API::get_new_releases(uint32_t limit, uin
 
 	for (auto album = json_object["items"].begin(); album != json_object["items"].end(); ++album)
 	{
-		new_releases.items.push_back(object_from_json(album.value().dump()));
+		new_releases.items.push_back(album_t::from_json(album.value().dump()));
 	}
 	new_releases.items.shrink_to_fit();
 

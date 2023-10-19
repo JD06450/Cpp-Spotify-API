@@ -11,6 +11,7 @@ namespace spotify_api
 	struct show_t
 	{
 		const std::string type = "show";
+		static std::unique_ptr<show_t> object_from_json(const std::string &json_string);
 	};
 
 	class Show_API
@@ -18,7 +19,6 @@ namespace spotify_api
 	public:
 		std::string access_token;
 		Show_API(std::string access_token): access_token(access_token) {}
-		void static object_from_json(const std::string &json_string, show_t *output);
 	};
 } // namespace spotify_api
 

@@ -8,9 +8,9 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-track_t * Track_API::object_from_json(const std::string &json_string)
+std::unique_ptr<track_t> track_t::from_json(const std::string &json_string)
 {
-	track_t *output;
+	auto output = std::make_unique<track_t>();
 	int step = 1;
 	try
 	{
@@ -23,13 +23,13 @@ track_t * Track_API::object_from_json(const std::string &json_string)
 		// not sure whether this check is needed
 		if (json_object.contains("album"))
 		{
-			output->album = Album_API::object_from_json(json_object["album"].dump());
+			output->album = album_t::from_json(json_object["album"].dump());
 		}
 
 		json::json temp = json_object["artists"];
 		for (auto artist = temp.begin(); artist != temp.end(); ++artist)
 		{
-			output->artists.push_back(Artist_API::object_from_json(artist.value().dump()));
+			output->artists.push_back(artist_t::from_json(artist.value().dump()));
 		}
 		output->artists.shrink_to_fit();
 
@@ -80,7 +80,7 @@ track_t * Track_API::object_from_json(const std::string &json_string)
 		if (json_object.contains("linked_from"))
 		{
 			// There should be a check to make sure that we cant loop infinitely here
-			output->linked_from.emplace(object_from_json(json_object["linked_from"].dump()));
+			output->linked_from.emplace(from_json(json_object["linked_from"].dump()));
 		}
 		else
 		{
@@ -112,30 +112,31 @@ track_t * Track_API::object_from_json(const std::string &json_string)
 	{
 		std::cerr << e.what() << '\n';
 		fprintf(stderr, "\033[31mspotify-api.cpp: object_from_json(): Error: Failed to convert json data to track at step %u.\nJson string: %s\n\n\033[39m", step, json::json::parse(json_string).dump(1, '\t').c_str());
-		return new track_t;
+		return std::unique_ptr<track_t>(nullptr);
 	}
+
 	return output;
 }
 
-track_t * Track_API::get_track(const std::string &track_id, const std::string &market)
+std::unique_ptr<track_t> Track_API::get_track(const std::string &track_id, const std::string &market)
 {
 	std::string url = API_PREFIX "/tracks/";
-	url += truncate_id(track_id);
+	url += truncate_spotify_uri(track_id);
 	auto response = http::get(url.c_str(), "market=" + market, this->access_token);
 
-	if (response.code != 200) return new track_t;
+	if (response.code != 200) return std::unique_ptr<track_t>(nullptr);
 
-	return object_from_json(response.body);
+	return track_t::from_json(response.body);
 }
 
-std::vector<track_t *> Track_API::get_tracks(const std::vector<std::string> &track_ids, const std::string &market)
+std::vector<std::unique_ptr<track_t>> Track_API::get_tracks(const std::vector<std::string> &track_ids, const std::string &market)
 {
 	std::ostringstream query_data;
 	query_data << "ids=";
 
 	for (size_t i = 0; i < track_ids.size(); ++i)
 	{
-		query_data << truncate_id(track_ids[i]);
+		query_data << truncate_spotify_uri(track_ids[i]);
 
 		if (i < (track_ids.size() - 1))
 		{
@@ -147,33 +148,33 @@ std::vector<track_t *> Track_API::get_tracks(const std::vector<std::string> &tra
 
 	auto response = http::get(API_PREFIX "/tracks", query_data.str(), this->access_token);
 
-	std::vector<track_t *> tracks;
+	std::vector<std::unique_ptr<track_t>> tracks;
 	if (response.code != 200) return tracks;
 
 	json::json tracks_array = json::json::parse(response.body)["tracks"];
 	for (auto track = tracks_array.begin(); track != tracks_array.end(); ++track)
 	{
-		tracks.push_back(object_from_json(track.value().dump()));
+		tracks.push_back(track_t::from_json(track.value().dump()));
 	}
 	return tracks;
 }
 
-page_t<track_t *> Track_API::get_saved_tracks(const std::string &market, uint8_t limit, unsigned int offset)
+page_t<std::unique_ptr<track_t>> Track_API::get_saved_tracks(const std::string &market, uint8_t limit, unsigned int offset)
 {
 	std::ostringstream query_data;
 	query_data << "market=" << market << "&limit=" << limit << "&offset=" << offset;
 	auto response = http::get(API_PREFIX "/me/tracks", query_data.str(), this->access_token);
 
-	page_t<track_t *> tracks_page;
+	page_t<std::unique_ptr<track_t>> tracks_page;
 	if (response.code != 200) return tracks_page;
 	
-	return *page_t<track_t *>::object_from_json(response.body, object_from_json);
+	return page_t<std::unique_ptr<track_t>>::from_json(response.body, track_t::from_json);
 }
 
 void Track_API::save_tracks(const std::vector<std::string> &track_ids)
 {
 	json::json json_ids = {
-		{"ids", truncate_ids(track_ids, 50)}
+		{"ids", truncate_spotify_uris(track_ids, 50)}
 	};
 	(void) http::request(API_PREFIX "/me/tracks", http::REQUEST_METHOD::PUT, json_ids.dump(), this->access_token, true);
 }
@@ -181,7 +182,7 @@ void Track_API::save_tracks(const std::vector<std::string> &track_ids)
 void Track_API::remove_saved_tracks(const std::vector<std::string> &track_ids)
 {
 	json::json json_ids = {
-		{"ids", truncate_ids(track_ids, 50)}
+		{"ids", truncate_spotify_uris(track_ids, 50)}
 	};
 	(void) http::request(API_PREFIX "/me/tracks", http::REQUEST_METHOD::DELETE, json_ids.dump(), this->access_token, true);
 }
@@ -191,7 +192,7 @@ std::vector<bool> Track_API::check_saved_tracks(const std::vector<std::string> &
 	std::ostringstream query_data;
 	query_data << "ids=";
 
-	std::vector<std::string> truncated_ids = truncate_ids(track_ids, 50);
+	std::vector<std::string> truncated_ids = truncate_spotify_uris(track_ids, 50);
 	for (size_t i = 0; i < truncated_ids.size(); ++i) {
 		query_data << truncated_ids[i];
 		if (i < (truncated_ids.size() - 1))
@@ -212,9 +213,9 @@ std::vector<bool> Track_API::check_saved_tracks(const std::vector<std::string> &
 	return checked_tracks;
 }
 
-audio_features_t * parse_audio_features(const std::string &json_string)
+std::unique_ptr<audio_features_t> parse_audio_features(const std::string &json_string)
 {
-	audio_features_t * output = new audio_features_t();
+	auto output = std::make_unique<audio_features_t>(nullptr);
 	json::json json_object = json::json::parse(json_string);
 	try
 	{
@@ -253,6 +254,7 @@ Track_API::recommendation_seed_t parse_recommendation_seed(const std::string &js
 template <typename T>
 T clamp(T value, T min, T max)
 {
+	static_assert(std::is_arithmetic<T>, "Value must be numeric.");
 	return std::max(min, std::min(value, max));
 }
 
@@ -354,22 +356,22 @@ std::string filter_to_query_string(Track_API::recommendation_filter_t filter)
 	return query_string.str();
 }
 
-audio_features_t * Track_API::get_audio_features_for_track(const std::string &track_id)
+std::unique_ptr<audio_features_t> Track_API::get_audio_features_for_track(const std::string &track_id)
 {
 	std::string url = API_PREFIX "/audio-features/";
-	url += truncate_id(track_id);
+	url += truncate_spotify_uri(track_id);
 
 	auto response = http::get(url.c_str(), std::string(), this->access_token);
 
-	if (response.code != 200) return new audio_features_t();
+	if (response.code != 200) return std::unique_ptr<audio_features_t>(nullptr);
 	return parse_audio_features(response.body);
 }
 
-std::vector<audio_features_t *> Track_API::get_audio_features_for_tracks(const std::vector<std::string> &track_ids)
+std::vector<std::unique_ptr<audio_features_t>> Track_API::get_audio_features_for_tracks(const std::vector<std::string> &track_ids)
 {
 	std::ostringstream query_data;
 	query_data << "?ids=";
-	std::vector<std::string> truncated_ids = truncate_ids(track_ids, 100);
+	std::vector<std::string> truncated_ids = truncate_spotify_uris(track_ids, 100);
 
 	for (size_t i = 0; i < truncated_ids.size(); ++i)
 	{
@@ -380,7 +382,7 @@ std::vector<audio_features_t *> Track_API::get_audio_features_for_tracks(const s
 		}
 	}
 	auto response = http::get(API_PREFIX "/audio-features", query_data.str(), this->access_token);
-	std::vector<audio_features_t *> features;
+	std::vector<std::unique_ptr<audio_features_t>> features;
 	if (response.code != 200) return features;
 
 	json::json features_json = json::json::parse(response.body)["audio_features"];
@@ -391,21 +393,23 @@ std::vector<audio_features_t *> Track_API::get_audio_features_for_tracks(const s
 	return features;
 }
 
-audio_analysis_t * Track_API::get_audio_analysis_for_track(const std::string &track_id)
+std::unique_ptr<audio_analysis_t> Track_API::get_audio_analysis_for_track(const std::string &track_id)
 {
 	std::ostringstream url;
-	url << API_PREFIX << "/audio-analysis/" << truncate_id(track_id);
+	url << API_PREFIX << "/audio-analysis/" << truncate_spotify_uri(track_id);
 	auto response = http::get(url.str().c_str(), std::string(), this->access_token);
-	if (response.code != 200) return new audio_analysis_t();
-	return parse_audio_analysis(response.body);
+	if (response.code != 200) return std::unique_ptr<audio_analysis_t>(nullptr);
+	return audio_analysis_t::from_json(response.body);
 }
 
-std::pair<std::vector<Track_API::recommendation_seed_t>, std::vector<track_t *>> * Track_API::get_recommendations(const recommendation_filter_t &filter)
+std::unique_ptr<Track_API::recommendations_t> Track_API::get_recommendations(const recommendation_filter_t &filter)
 {
 	std::string query_data = filter_to_query_string(filter);
 	auto response = http::get(API_PREFIX "/recommendations", query_data, this->access_token);
-	auto retval = new std::pair<std::vector<recommendation_seed_t>, std::vector<track_t *>>();
-	if (response.code != 200) return retval;
+	
+	if (response.code != 200) return std::unique_ptr<Track_API::recommendations_t>(nullptr);
+
+	auto retval = std::make_unique<Track_API::recommendations_t>();
 	json::json response_json = json::json::parse(response.body);
 
 	for (auto seed = response_json["seeds"].begin(); seed != response_json["seeds"].end(); ++seed)
@@ -415,7 +419,7 @@ std::pair<std::vector<Track_API::recommendation_seed_t>, std::vector<track_t *>>
 
 	for (auto track = response_json["tracks"].begin(); track != response_json["tracks"].end(); ++track)
 	{
-		retval->second.push_back(object_from_json(track.value().dump()));
+		retval->second.push_back(track_t::from_json(track.value().dump()));
 	}
 
 	return retval;

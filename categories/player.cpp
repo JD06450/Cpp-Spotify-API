@@ -8,9 +8,9 @@ namespace json = nlohmann;
 namespace spotify_api
 {
 
-playback_device_t * parse_playback_device(const std::string &json_string)
+std::unique_ptr<playback_device_t> parse_playback_device(const std::string &json_string)
 {
-	playback_device_t * device = new playback_device_t();
+	auto device = std::make_unique<playback_device_t>();
 	try
 	{
 		json::json json_object = json::json::parse(json_string);
@@ -29,9 +29,9 @@ playback_device_t * parse_playback_device(const std::string &json_string)
 	return device;
 }
 
-context_t * parse_player_context(const std::string &json_string)
+std::unique_ptr<context_t> parse_player_context(const std::string &json_string)
 {
-	context_t * context = new context_t();
+	auto context = std::make_unique<context_t>();
 	try
 	{
 		json::json json_object = json::json::parse(json_string);
@@ -51,9 +51,9 @@ context_t * parse_player_context(const std::string &json_string)
 	return context;
 }
 
-context_actions_t * parse_context_actions(const std::string &json_string)
+std::unique_ptr<context_actions_t> parse_context_actions(const std::string &json_string)
 {
-	context_actions_t * actions = new context_actions_t();
+	auto actions = std::make_unique<context_actions_t>();
 	try
 	{
 		json::json json_object = json::json::parse(json_string);
@@ -75,9 +75,9 @@ context_actions_t * parse_context_actions(const std::string &json_string)
 	return actions;
 }
 
-playback_state_t * parse_playback_state(const std::string &json_string)
+std::unique_ptr<playback_state_t> parse_playback_state(const std::string &json_string)
 {
-	playback_state_t * state = new playback_state_t();
+	auto state = std::make_unique<playback_state_t>();
 	try
 	{
 		json::json json_object = json::json::parse(json_string);
@@ -97,7 +97,7 @@ playback_state_t * parse_playback_state(const std::string &json_string)
 		// Last but not least, mem leak #3
 		state->device = *parse_playback_device(json_object["device"].dump());
 		state->is_playing = json_object["is_playing"];
-		state->item = Track_API::object_from_json(json_object["item"].dump());
+		state->item = Track_API::from_json(json_object["item"].dump());
 		state->progress_ms = json_object["progress_ms"];
 		state->repeat_state = json_object["repeate_state"];
 		state->shuffle_state = json_object["shuffle_state"];
@@ -110,9 +110,9 @@ playback_state_t * parse_playback_state(const std::string &json_string)
 	return state;
 }
 
-queue_t * parse_queue(const std::string &json_string)
+std::unique_ptr<queue_t> queue_t::from_json(const std::string &json_string)
 {
-	queue_t * queue = new queue_t;
+	auto queue = std::make_unique<queue_t>();
 	json::json json_object = json::json::parse(json_string);
 
 	if (!json_object["currently_playing"].is_null())
@@ -134,13 +134,13 @@ queue_t * parse_queue(const std::string &json_string)
 	{
 		if (!json_object["currently_playing"].is_null())
 		{
-			queue->current_track = Track_API::object_from_json(json_object["currently_playing"].dump());
+			queue->current_track = Track_API::from_json(json_object["currently_playing"].dump());
 		}
-		queue->tracks.emplace(std::vector<track_t *>());
+		queue->tracks.emplace(std::vector<std::unique_ptr<track_t>>());
 		
 		for (auto track = json_object["queue"].begin(); track != json_object["queue"].end(); ++track)
 		{
-			queue->tracks.value().push_back(Track_API::object_from_json(track.value().dump()));
+			queue->tracks.value().push_back(Track_API::from_json(track.value().dump()));
 		}
 
 		return queue;
@@ -149,24 +149,24 @@ queue_t * parse_queue(const std::string &json_string)
 	{
 		if (!json_object["currently_playing"].is_null())
 		{
-			queue->current_episode = Episode_API::object_from_json(json_object["currently_playing"].dump());
+			queue->current_episode = episode_t::from_json(json_object["currently_playing"].dump());
 		}
-		queue->episodes.emplace(std::vector<episode_t *>());
+		queue->episodes.emplace(std::vector<std::unique_ptr<episode_t>>());
 
 		for (auto episode = json_object["queue"].begin(); episode != json_object["queue"].end(); ++episode)
 		{
-			queue->episodes.value().push_back(Episode_API::object_from_json(episode.value().dump()));
+			queue->episodes.value().push_back(episode_t::from_json(episode.value().dump()));
 		}
 		return queue;
 	}
 	return queue;
 }
 
-playback_state_t *Player_API::get_playback_state()
+std::unique_ptr<playback_state_t> Player_API::get_playback_state()
 {
 	http::api_response response = http::get(API_PREFIX "/me/player", std::string(""), this->access_token);
 
-	if (response.code != 200) return new playback_state_t();
+	if (response.code != 200) return std::unique_ptr<playback_state_t>(nullptr);
 	return parse_playback_state(response.body);
 }
 
@@ -196,11 +196,11 @@ std::vector<playback_device_t> Player_API::get_available_devices()
 	return devices;
 }
 
-track_t *Player_API::get_currently_playing_track()
+std::unique_ptr<track_t>Player_API::get_currently_playing_track()
 {
 	http::api_response response = http::get(API_PREFIX "/me/player/currently-playing", std::string(""), this->access_token);
-	if (response.code != 200) return new track_t();
-	return Track_API::object_from_json(response.body);
+	if (response.code != 200) return std::unique_ptr<track_t>(nullptr);
+	return Track_API::from_json(response.body);
 }
 
 void Player_API::start_or_resume_playback(const std::string &context_uri, const std::vector<std::string> &uris, int offset, int position_ms)
@@ -265,9 +265,9 @@ void Player_API::set_shuffle(bool state)
 	http::request(API_PREFIX "/me/player/shuffle", http::REQUEST_METHOD::PUT, put_data.dump(), this->access_token, true);
 }
 
-recent_tracks_t * parse_recent_tracks(const std::string &json_string)
+std::unique_ptr<recent_tracks_t> recent_tracks_t::from_json(const std::string &json_string)
 {
-	recent_tracks_t * recent_tracks = new recent_tracks_t();
+	auto recent_tracks = std::make_unique<recent_tracks_t>();
 	try
 	{
 		json::json json_object = json::json(json_string);
@@ -278,7 +278,6 @@ recent_tracks_t * parse_recent_tracks(const std::string &json_string)
 		recent_tracks->limit = json_object["limit"];
 		recent_tracks->next = json_object.value("next", "");
 		recent_tracks->total = json_object["total"];
-		
 
 		for (auto item = json_object["items"].begin(); item != json_object["items"].end(); ++item)
 		{
@@ -287,8 +286,9 @@ recent_tracks_t * parse_recent_tracks(const std::string &json_string)
 
 			temp_history.played_at = temp_obj["played_at"];
 			// This here is an example of YAML. Yet Another Memory Leak
+			// Not anymore because of smart pointers.
 			temp_history.context = *parse_player_context(temp_obj["context"].dump());
-			temp_history.track = Track_API::object_from_json(temp_obj["track"].dump());
+			temp_history.track = Track_API::from_json(temp_obj["track"].dump());
 			recent_tracks->items.push_back(temp_history);
 		}
 	}
@@ -299,9 +299,9 @@ recent_tracks_t * parse_recent_tracks(const std::string &json_string)
 	return recent_tracks;
 };
 
-recent_tracks_t * Player_API::get_recently_played_tracks(int limit = 20, unsigned int timestamp = 0, bool after = false)
+std::unique_ptr<recent_tracks_t> Player_API::get_recently_played_tracks(int limit = 20, unsigned int timestamp = 0, bool after = false)
 {
-	recent_tracks_t *recent_tracks = new recent_tracks_t();
+	auto recent_tracks = std::make_unique<recent_tracks_t>();
 
 	if (limit < 0) limit = 0;
 	if (limit > 50) limit = 50;
@@ -316,16 +316,16 @@ recent_tracks_t * Player_API::get_recently_played_tracks(int limit = 20, unsigne
 
 	if (response.code != 200) return recent_tracks;
 
-	return parse_recent_tracks(response.body);
+	return recent_tracks_t::from_json(response.body);
 }
 
-queue_t * Player_API::get_queue()
+std::unique_ptr<queue_t> Player_API::get_queue()
 {
 	auto response = http::get(API_PREFIX "/me/player/queue", std::string(), this->access_token);
 	if (response.code != 200) {
-		return new queue_t();
+		return std::unique_ptr<queue_t>(nullptr);
 	}
-	return parse_queue(response.body);
+	return queue_t::from_json(response.body);
 }
 
 
@@ -337,19 +337,19 @@ void Player_API::add_item_to_playback_queue(const std::string &item_uri)
 	auto response = http::post(url.c_str(), std::string(), this->access_token, true);
 }
 
-track_t * Player_API::search_for_track(const std::string &q)
+std::unique_ptr<track_t> Player_API::search_for_track(const std::string &q)
 {
 	std::string query = "q=" + q + "&type=track";
 	auto response = http::get(API_PREFIX "/search", query, this->access_token);
 
 	if (response.code != 200) {
 		std::cerr << "failed to search for track: " << response.code << '\n';
-		return new track_t();
+		return std::unique_ptr<track_t>(nullptr);
 	}
 
 	json::json temp = json::json::parse(response.body);
 
-	return Track_API::object_from_json(temp["tracks"]["items"][0].dump());
+	return Track_API::from_json(temp["tracks"]["items"][0].dump());
 }
 
 } // namespace spotify_api

@@ -25,8 +25,10 @@ namespace spotify_api
 		bool is_public;
 		std::string snapshot_id = "";
 		page_t<track_t *> tracks;
-		const std::string type = "playlist";
+		const std::string item_type = "playlist";
 		std::string uri = "";
+
+		static std::unique_ptr<playlist_t> from_json(const std::string &json_string);
 	};
 
 	class Playlist_API

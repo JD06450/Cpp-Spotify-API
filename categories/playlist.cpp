@@ -160,7 +160,7 @@ std::vector<playlist_t *> Playlist_API::get_my_playlists(int limit)
 					for (auto track = json_tracks.begin(); track != json_tracks.end(); ++track)
 					{
 						spotify_api::track_t *temp = new spotify_api::track_t;
-						Track_API::object_from_json(track.value().dump(), temp);
+						Track_API::from_json(track.value().dump(), temp);
 						output.tracks.items.push_back(temp);
 					}
 				}
