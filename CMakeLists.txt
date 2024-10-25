@@ -1,31 +1,31 @@
 cmake_minimum_required(VERSION 3.23.0)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+
+if (UNIX)
+    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
+    set(CMAKE_C_COMPILER "/usr/bin/gcc")
+endif()
+
+if (WIN32)
+    set(CMAKE_CXX_COMPILER "C:/msys64/mingw64/bin/g++.exe")
+    set(CMAKE_C_COMPILER "C:/msys64/mingw64/bin/gcc.exe")
+
+    if (CMAKE_GENERATOR MATCHES "Ninja")
+        set(CMAKE_MAKE_PROGRAM "C:/msys64/mingw64/bin/ninja.exe")
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_compile_options(-fconcepts-diagnostics-depth=5)
+
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
 
 project(Cpp-Spotify-API VERSION 0.1.0)
 
 # TODO: Add option to compile to shared lib instead of static
 
-add_library(Cpp-Spotify-API STATIC
-	spotify-api.cpp
-	curl-util.cpp
-	categories/albums.cpp
-	categories/artists.cpp
-	categories/common.cpp
-	categories/episodes.cpp
-	categories/player.cpp
-	categories/playlist.cpp
-	categories/session.cpp
-	categories/shows.cpp
-	categories/tracks.cpp
-)
+add_subdirectory(src)
 
-find_package(nlohmann_json CONFIG REQUIRED)
-find_package(CURL CONFIG REQUIRED)
-
-target_link_libraries(Cpp-Spotify-API PRIVATE nlohmann_json::nlohmann_json PRIVATE CURL::libcurl)
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-#include(CPack)
+# add_subdirectory(tests)
